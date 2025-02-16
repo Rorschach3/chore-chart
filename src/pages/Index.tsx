@@ -9,6 +9,17 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const Index = () => {
   const [newHouseholdName, setNewHouseholdName] = useState("");
@@ -99,6 +110,52 @@ const Index = () => {
     },
   });
 
+  // Delete household mutation
+  const deleteHousehold = useMutation({
+    mutationFn: async () => {
+      if (!session?.user?.id || !household?.id) throw new Error("Invalid operation");
+
+      // First update the user's profile to remove the household_id
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ household_id: null })
+        .eq("id", session.user.id);
+
+      if (profileError) {
+        console.error("Profile update error:", profileError);
+        throw profileError;
+      }
+
+      // Then delete the household
+      const { error: householdError } = await supabase
+        .from("households")
+        .delete()
+        .eq("id", household.id);
+
+      if (householdError) {
+        console.error("Household deletion error:", householdError);
+        throw householdError;
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Household deleted successfully!",
+      });
+      // Invalidate queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["household"] });
+    },
+    onError: (error: any) => {
+      console.error("Error in household deletion flow:", error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreateHousehold = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newHouseholdName.trim()) {
@@ -131,9 +188,32 @@ const Index = () => {
               <CardTitle>Your Household</CardTitle>
               <CardDescription>Manage your household and members</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <h2 className="text-xl font-semibold">{household.name}</h2>
-              {/* We'll add member management here later */}
+              
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive">Delete Household</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete your household
+                      and remove all associated data.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => deleteHousehold.mutate()}
+                      className="bg-red-500 hover:bg-red-600"
+                    >
+                      {deleteHousehold.isPending ? "Deleting..." : "Delete"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </CardContent>
           </Card>
         ) : (
