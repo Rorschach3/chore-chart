@@ -30,6 +30,7 @@ const Index = () => {
       if (error) throw error;
       return data;
     },
+    enabled: !!session?.user?.id,
   });
 
   // Fetch households data
@@ -51,7 +52,9 @@ const Index = () => {
   // Create household mutation
   const createHousehold = useMutation({
     mutationFn: async () => {
-      // Insert new household
+      if (!session?.user?.id) throw new Error("User not authenticated");
+
+      // First create the household
       const { data: householdData, error: householdError } = await supabase
         .from("households")
         .insert([{ name: newHouseholdName }])
@@ -60,11 +63,11 @@ const Index = () => {
 
       if (householdError) throw householdError;
 
-      // Update user's profile with new household_id
+      // Then update the user's profile with the new household_id
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ household_id: householdData.id })
-        .eq("id", session?.user?.id);
+        .eq("id", session.user.id);
 
       if (profileError) throw profileError;
 
@@ -80,6 +83,7 @@ const Index = () => {
       queryClient.invalidateQueries({ queryKey: ["household"] });
     },
     onError: (error: any) => {
+      console.error("Error creating household:", error);
       toast({
         title: "Error",
         description: error.message,
