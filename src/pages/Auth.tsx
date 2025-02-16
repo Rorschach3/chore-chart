@@ -21,21 +21,46 @@ export default function Auth() {
     setLoading(true);
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            emailRedirectTo: window.location.origin,
+          },
         });
+        
         if (error) throw error;
-        toast({
-          title: "Success!",
-          description: "Please check your email to verify your account.",
-        });
+        
+        if (data.user?.identities?.length === 0) {
+          toast({
+            title: "Account exists",
+            description: "An account with this email already exists. Please sign in instead.",
+            variant: "destructive",
+          });
+          setIsSignUp(false);
+        } else {
+          toast({
+            title: "Success!",
+            description: "Please check your email to verify your account.",
+          });
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
-        if (error) throw error;
+        
+        if (error) {
+          // Handle specific error cases
+          if (error.message === "Invalid login credentials") {
+            throw new Error("Invalid email or password. Please try again or sign up if you don't have an account.");
+          } else if (error.message.includes("Email not confirmed")) {
+            throw new Error("Please confirm your email address before signing in.");
+          } else {
+            throw error;
+          }
+        }
+        
         navigate("/");
       }
     } catch (error: any) {
@@ -44,6 +69,7 @@ export default function Auth() {
         description: error.message,
         variant: "destructive",
       });
+      console.error("Auth error:", error);
     } finally {
       setLoading(false);
     }
@@ -82,6 +108,7 @@ export default function Auth() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={6}
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
