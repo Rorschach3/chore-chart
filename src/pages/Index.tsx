@@ -54,22 +54,28 @@ const Index = () => {
     mutationFn: async () => {
       if (!session?.user?.id) throw new Error("User not authenticated");
 
-      // First create the household
+      // First create the household and immediately update the user's profile
       const { data: householdData, error: householdError } = await supabase
         .from("households")
         .insert([{ name: newHouseholdName }])
         .select()
         .single();
 
-      if (householdError) throw householdError;
+      if (householdError) {
+        console.error("Household creation error:", householdError);
+        throw householdError;
+      }
 
-      // Then update the user's profile with the new household_id
+      // Update the user's profile with the new household_id
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ household_id: householdData.id })
         .eq("id", session.user.id);
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error("Profile update error:", profileError);
+        throw profileError;
+      }
 
       return householdData;
     },
@@ -79,11 +85,12 @@ const Index = () => {
         description: "Household created successfully!",
       });
       setNewHouseholdName("");
+      // Invalidate both queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["household"] });
     },
     onError: (error: any) => {
-      console.error("Error creating household:", error);
+      console.error("Error in household creation flow:", error);
       toast({
         title: "Error",
         description: error.message,
