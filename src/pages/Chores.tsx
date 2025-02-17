@@ -337,7 +337,7 @@ const Chores = () => {
                     <TableHead>Title</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Assigned To</TableHead>
-                    {userInfo.isAdmin && <TableHead className="w-12">Delete</TableHead>}
+                    {userInfo?.isAdmin && <TableHead className="w-12">Delete</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -361,9 +361,9 @@ const Chores = () => {
                         {chore.description}
                       </TableCell>
                       <TableCell>
-                        {userInfo.isAdmin ? (
+                        {userInfo?.isAdmin ? (
                           <Select
-                            value={chore.assigned_to?.id || ""}
+                            value={chore.assigned_to || ""}
                             onValueChange={(value) =>
                               assignChore.mutate({
                                 choreId: chore.id,
@@ -373,8 +373,8 @@ const Chores = () => {
                           >
                             <SelectTrigger className="w-[200px]">
                               <SelectValue>
-                                {chore.assigned_to ? (
-                                  chore.assigned_to.full_name || chore.assigned_to.username
+                                {chore.profiles ? (
+                                  chore.profiles.full_name || chore.profiles.username
                                 ) : (
                                   <span className="text-gray-500">Unassigned</span>
                                 )}
@@ -393,8 +393,8 @@ const Chores = () => {
                           <div className="flex items-center gap-2">
                             <UserCircle2 className="h-4 w-4" />
                             <span>
-                              {chore.assigned_to ? (
-                                chore.assigned_to.full_name || chore.assigned_to.username
+                              {chore.profiles ? (
+                                chore.profiles.full_name || chore.profiles.username
                               ) : (
                                 <span className="text-gray-500">Unassigned</span>
                               )}
@@ -402,7 +402,7 @@ const Chores = () => {
                           </div>
                         )}
                       </TableCell>
-                      {userInfo.isAdmin && (
+                      {userInfo?.isAdmin && (
                         <TableCell>
                           <Button
                             variant="ghost"
