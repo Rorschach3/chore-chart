@@ -26,7 +26,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2 } from "lucide-react";
+import { Trash2, UserCircle2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const Chores = () => {
   const [newChoreTitle, setNewChoreTitle] = useState("");
@@ -37,48 +44,76 @@ const Chores = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  // Get user's household
-  const { data: profile } = useQuery({
-    queryKey: ["profile"],
+  // Get user's household and role
+  const { data: userInfo } = useQuery({
+    queryKey: ["userInfo"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("household_id")
         .eq("id", session?.user?.id)
         .single();
 
-      if (error) throw error;
-      return data;
+      if (profileError) throw profileError;
+
+      const { data: roleData, error: roleError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session?.user?.id)
+        .eq("household_id", profile.household_id)
+        .single();
+
+      if (roleError) throw roleError;
+
+      return {
+        household_id: profile.household_id,
+        isAdmin: roleData.role === "admin",
+      };
     },
     enabled: !!session?.user?.id,
   });
 
+  // Get household members
+  const { data: members } = useQuery({
+    queryKey: ["householdMembers", userInfo?.household_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, username")
+        .eq("household_id", userInfo?.household_id);
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userInfo?.household_id,
+  });
+
   // Fetch chores
   const { data: chores, isLoading } = useQuery({
-    queryKey: ["chores", profile?.household_id],
+    queryKey: ["chores", userInfo?.household_id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("chores")
-        .select("*")
-        .eq("household_id", profile.household_id)
+        .select("*, assigned_to (id, full_name, username)")
+        .eq("household_id", userInfo?.household_id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data;
     },
-    enabled: !!profile?.household_id,
+    enabled: !!userInfo?.household_id,
   });
 
   // Create chore mutation
   const createChore = useMutation({
     mutationFn: async () => {
-      if (!profile?.household_id) throw new Error("No household selected");
+      if (!userInfo?.household_id) throw new Error("No household selected");
 
       const { error } = await supabase.from("chores").insert([
         {
           title: newChoreTitle,
           description: newChoreDescription,
-          household_id: profile.household_id,
+          household_id: userInfo.household_id,
         },
       ]);
 
@@ -125,6 +160,31 @@ const Chores = () => {
     },
   });
 
+  // Assign chore mutation
+  const assignChore = useMutation({
+    mutationFn: async ({ choreId, userId }: { choreId: string; userId: string | null }) => {
+      const { error } = await supabase
+        .from("chores")
+        .update({ assigned_to: userId })
+        .eq("id", choreId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["chores"] });
+      toast({
+        title: "Success",
+        description: "Chore assigned successfully!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Toggle chore completion mutation
   const toggleChore = useMutation({
     mutationFn: async ({ choreId, completed }: { choreId: string; completed: boolean }) => {
@@ -153,7 +213,7 @@ const Chores = () => {
     }
   };
 
-  if (!profile?.household_id) {
+  if (!userInfo?.household_id) {
     return (
       <div className="min-h-screen p-4 flex items-center justify-center">
         <Card>
@@ -249,7 +309,8 @@ const Chores = () => {
                     <TableHead className="w-12">Done</TableHead>
                     <TableHead>Title</TableHead>
                     <TableHead>Description</TableHead>
-                    <TableHead className="w-12">Delete</TableHead>
+                    <TableHead>Assigned To</TableHead>
+                    {userInfo.isAdmin && <TableHead className="w-12">Delete</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -273,14 +334,58 @@ const Chores = () => {
                         {chore.description}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteChore.mutate(chore.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {userInfo.isAdmin ? (
+                          <Select
+                            value={chore.assigned_to?.id || ""}
+                            onValueChange={(value) =>
+                              assignChore.mutate({
+                                choreId: chore.id,
+                                userId: value || null,
+                              })
+                            }
+                          >
+                            <SelectTrigger className="w-[200px]">
+                              <SelectValue>
+                                {chore.assigned_to ? (
+                                  chore.assigned_to.full_name || chore.assigned_to.username
+                                ) : (
+                                  <span className="text-gray-500">Unassigned</span>
+                                )}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">Unassigned</SelectItem>
+                              {members?.map((member) => (
+                                <SelectItem key={member.id} value={member.id}>
+                                  {member.full_name || member.username}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <UserCircle2 className="h-4 w-4" />
+                            <span>
+                              {chore.assigned_to ? (
+                                chore.assigned_to.full_name || chore.assigned_to.username
+                              ) : (
+                                <span className="text-gray-500">Unassigned</span>
+                              )}
+                            </span>
+                          </div>
+                        )}
                       </TableCell>
+                      {userInfo.isAdmin && (
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteChore.mutate(chore.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>
