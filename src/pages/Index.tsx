@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
+import { ListTodo } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,7 +28,6 @@ const Index = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  // Fetch user's household
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["profile"],
     queryFn: async () => {
@@ -44,7 +43,6 @@ const Index = () => {
     enabled: !!session?.user?.id,
   });
 
-  // Fetch households data
   const { data: household, isLoading: householdLoading } = useQuery({
     queryKey: ["household", profile?.household_id],
     enabled: !!profile?.household_id,
@@ -60,12 +58,10 @@ const Index = () => {
     },
   });
 
-  // Create household mutation
   const createHousehold = useMutation({
     mutationFn: async () => {
       if (!session?.user?.id) throw new Error("User not authenticated");
 
-      // First create the household and immediately update the user's profile
       const { data: householdData, error: householdError } = await supabase
         .from("households")
         .insert([{ name: newHouseholdName }])
@@ -77,7 +73,6 @@ const Index = () => {
         throw householdError;
       }
 
-      // Update the user's profile with the new household_id
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ household_id: householdData.id })
@@ -96,7 +91,6 @@ const Index = () => {
         description: "Household created successfully!",
       });
       setNewHouseholdName("");
-      // Invalidate both queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["household"] });
     },
@@ -110,12 +104,10 @@ const Index = () => {
     },
   });
 
-  // Delete household mutation
   const deleteHousehold = useMutation({
     mutationFn: async () => {
       if (!session?.user?.id || !household?.id) throw new Error("Invalid operation");
 
-      // First update the user's profile to remove the household_id
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ household_id: null })
@@ -126,7 +118,6 @@ const Index = () => {
         throw profileError;
       }
 
-      // Then delete the household
       const { error: householdError } = await supabase
         .from("households")
         .delete()
@@ -142,7 +133,6 @@ const Index = () => {
         title: "Success",
         description: "Household deleted successfully!",
       });
-      // Invalidate queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["household"] });
     },
@@ -191,29 +181,39 @@ const Index = () => {
             <CardContent className="space-y-4">
               <h2 className="text-xl font-semibold">{household.name}</h2>
               
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive">Delete Household</Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete your household
-                      and remove all associated data.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => deleteHousehold.mutate()}
-                      className="bg-red-500 hover:bg-red-600"
-                    >
-                      {deleteHousehold.isPending ? "Deleting..." : "Delete"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <div className="flex space-x-2">
+                <Button
+                  className="flex items-center space-x-2"
+                  onClick={() => navigate("/chores")}
+                >
+                  <ListTodo className="h-4 w-4" />
+                  <span>Manage Chores</span>
+                </Button>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive">Delete Household</Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete your household
+                        and remove all associated data.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => deleteHousehold.mutate()}
+                        className="bg-red-500 hover:bg-red-600"
+                      >
+                        {deleteHousehold.isPending ? "Deleting..." : "Delete"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </CardContent>
           </Card>
         ) : (

@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./components/AuthProvider";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import Chores from "./pages/Chores";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,14 @@ const App = () => (
               element={
                 <PrivateRoute>
                   <Index />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/chores"
+              element={
+                <PrivateRoute>
+                  <Chores />
                 </PrivateRoute>
               }
             />
