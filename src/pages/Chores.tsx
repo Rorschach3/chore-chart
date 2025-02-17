@@ -3,54 +3,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, UserCircle2 } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-type Profile = {
-  id: string;
-  full_name: string | null;
-  username: string | null;
-};
-
-type Chore = {
-  id: string;
-  title: string;
-  description: string | null;
-  completed: boolean;
-  created_at: string;
-  household_id: string;
-  assigned_to: string | null;
-  profiles: Profile | null;
-};
+import { ChoreDialog } from "@/components/chores/ChoreDialog";
+import { ChoresList } from "@/components/chores/ChoresList";
+import type { Chore, Profile } from "@/components/chores/types";
 
 const Chores = () => {
   const [newChoreTitle, setNewChoreTitle] = useState("");
@@ -265,55 +224,16 @@ const Chores = () => {
             <Button variant="outline" onClick={() => navigate("/")}>
               Back to Household
             </Button>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>Add Chore</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add New Chore</DialogTitle>
-                  <DialogDescription>
-                    Create a new chore for your household.
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleCreateChore} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Title</Label>
-                    <Input
-                      id="title"
-                      placeholder="Enter chore title"
-                      value={newChoreTitle}
-                      onChange={(e) => setNewChoreTitle(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Enter chore description (optional)"
-                      value={newChoreDescription}
-                      onChange={(e) => setNewChoreDescription(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsDialogOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={createChore.isPending || !newChoreTitle.trim()}
-                    >
-                      {createChore.isPending ? "Adding..." : "Add Chore"}
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
+            <ChoreDialog
+              isOpen={isDialogOpen}
+              onOpenChange={setIsDialogOpen}
+              onSubmit={handleCreateChore}
+              title={newChoreTitle}
+              onTitleChange={setNewChoreTitle}
+              description={newChoreDescription}
+              onDescriptionChange={setNewChoreDescription}
+              isSubmitting={createChore.isPending}
+            />
           </div>
         </div>
 
@@ -330,93 +250,18 @@ const Chores = () => {
                 No chores yet. Add your first chore!
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">Done</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Assigned To</TableHead>
-                    {userInfo?.isAdmin && <TableHead className="w-12">Delete</TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {chores?.map((chore) => (
-                    <TableRow key={chore.id}>
-                      <TableCell>
-                        <Checkbox
-                          checked={chore.completed}
-                          onCheckedChange={(checked) =>
-                            toggleChore.mutate({
-                              choreId: chore.id,
-                              completed: checked as boolean,
-                            })
-                          }
-                        />
-                      </TableCell>
-                      <TableCell className={chore.completed ? "line-through text-gray-500" : ""}>
-                        {chore.title}
-                      </TableCell>
-                      <TableCell className={chore.completed ? "line-through text-gray-500" : ""}>
-                        {chore.description}
-                      </TableCell>
-                      <TableCell>
-                        {userInfo?.isAdmin ? (
-                          <Select
-                            value={chore.assigned_to || ""}
-                            onValueChange={(value) =>
-                              assignChore.mutate({
-                                choreId: chore.id,
-                                userId: value || null,
-                              })
-                            }
-                          >
-                            <SelectTrigger className="w-[200px]">
-                              <SelectValue>
-                                {chore.profiles ? (
-                                  chore.profiles.full_name || chore.profiles.username
-                                ) : (
-                                  <span className="text-gray-500">Unassigned</span>
-                                )}
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="">Unassigned</SelectItem>
-                              {members?.map((member) => (
-                                <SelectItem key={member.id} value={member.id}>
-                                  {member.full_name || member.username}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <UserCircle2 className="h-4 w-4" />
-                            <span>
-                              {chore.profiles ? (
-                                chore.profiles.full_name || chore.profiles.username
-                              ) : (
-                                <span className="text-gray-500">Unassigned</span>
-                              )}
-                            </span>
-                          </div>
-                        )}
-                      </TableCell>
-                      {userInfo?.isAdmin && (
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => deleteChore.mutate(chore.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <ChoresList
+                chores={chores}
+                members={members || []}
+                isAdmin={!!userInfo?.isAdmin}
+                onToggleComplete={(choreId, completed) =>
+                  toggleChore.mutate({ choreId, completed })
+                }
+                onAssign={(choreId, userId) =>
+                  assignChore.mutate({ choreId, userId })
+                }
+                onDelete={(choreId) => deleteChore.mutate(choreId)}
+              />
             )}
           </CardContent>
         </Card>
