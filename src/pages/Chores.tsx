@@ -35,6 +35,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+type Profile = {
+  id: string;
+  full_name: string | null;
+  username: string | null;
+};
+
+type Chore = {
+  id: string;
+  title: string;
+  description: string | null;
+  completed: boolean;
+  created_at: string;
+  household_id: string;
+  assigned_to: string | null;
+  profiles: Profile | null;
+};
+
 const Chores = () => {
   const [newChoreTitle, setNewChoreTitle] = useState("");
   const [newChoreDescription, setNewChoreDescription] = useState("");
@@ -75,7 +92,7 @@ const Chores = () => {
   });
 
   // Get household members
-  const { data: members } = useQuery({
+  const { data: members } = useQuery<Profile[]>({
     queryKey: ["householdMembers", userInfo?.household_id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -90,7 +107,7 @@ const Chores = () => {
   });
 
   // Fetch chores
-  const { data: chores, isLoading } = useQuery({
+  const { data: chores, isLoading } = useQuery<Chore[]>({
     queryKey: ["chores", userInfo?.household_id],
     queryFn: async () => {
       const { data, error } = await supabase
