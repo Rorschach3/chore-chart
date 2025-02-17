@@ -95,8 +95,15 @@ const Chores = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("chores")
-        .select("*, assigned_to (id, full_name, username)")
-        .eq("household_id", userInfo?.household_id)
+        .select(`
+          *,
+          assigned_to:profiles!chores_assigned_to_fkey (
+            id,
+            full_name,
+            username
+          )
+        `)
+        .eq("chores.household_id", userInfo?.household_id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
