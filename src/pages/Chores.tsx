@@ -96,14 +96,16 @@ const Chores = () => {
       const { data, error } = await supabase
         .from("chores")
         .select(`
-          *,
-          assigned_to:profiles!chores_assigned_to_fkey (
-            id,
-            full_name,
-            username
-          )
+          id,
+          title,
+          description,
+          completed,
+          created_at,
+          household_id,
+          assigned_to,
+          profiles:profiles(id, full_name, username)
         `)
-        .eq("chores.household_id", userInfo?.household_id)
+        .eq("household_id", userInfo?.household_id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
