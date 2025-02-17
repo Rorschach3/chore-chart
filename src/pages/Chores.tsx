@@ -52,22 +52,23 @@ const Chores = () => {
         .from("profiles")
         .select("household_id")
         .eq("id", session?.user?.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) throw profileError;
+      if (!profile?.household_id) return { household_id: null, isAdmin: false };
 
       const { data: roleData, error: roleError } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", session?.user?.id)
         .eq("household_id", profile.household_id)
-        .single();
+        .maybeSingle();
 
       if (roleError) throw roleError;
 
       return {
         household_id: profile.household_id,
-        isAdmin: roleData.role === "admin",
+        isAdmin: roleData?.role === "admin",
       };
     },
     enabled: !!session?.user?.id,
