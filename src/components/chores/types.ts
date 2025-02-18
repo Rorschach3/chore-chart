@@ -14,4 +14,5 @@ export type Chore = {
   household_id: string;
   assigned_to: string | null;
   profiles: Profile | null;
+  completion_photo: string | null;
 };

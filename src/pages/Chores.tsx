@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,7 +19,6 @@ const Chores = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  // Get user's household and role
   const { data: userInfo } = useQuery({
     queryKey: ["userInfo"],
     queryFn: async () => {
@@ -50,7 +48,6 @@ const Chores = () => {
     enabled: !!session?.user?.id,
   });
 
-  // Get household members
   const { data: members } = useQuery<Profile[]>({
     queryKey: ["householdMembers", userInfo?.household_id],
     queryFn: async () => {
@@ -65,7 +62,6 @@ const Chores = () => {
     enabled: !!userInfo?.household_id,
   });
 
-  // Fetch chores
   const { data: chores, isLoading } = useQuery<Chore[]>({
     queryKey: ["chores", userInfo?.household_id],
     queryFn: async () => {
@@ -90,7 +86,21 @@ const Chores = () => {
     enabled: !!userInfo?.household_id,
   });
 
-  // Create chore mutation
+  const { data: userProfile } = useQuery({
+    queryKey: ["userProfile"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("full_name, username")
+        .eq("id", session?.user?.id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!session?.user?.id,
+  });
+
   const createChore = useMutation({
     mutationFn: async () => {
       if (!userInfo?.household_id) throw new Error("No household selected");
@@ -124,7 +134,6 @@ const Chores = () => {
     },
   });
 
-  // Delete chore mutation
   const deleteChore = useMutation({
     mutationFn: async (choreId: string) => {
       const { error } = await supabase.from("chores").delete().eq("id", choreId);
@@ -146,7 +155,6 @@ const Chores = () => {
     },
   });
 
-  // Assign chore mutation
   const assignChore = useMutation({
     mutationFn: async ({ choreId, userId }: { choreId: string; userId: string | null }) => {
       const { error } = await supabase
@@ -171,7 +179,6 @@ const Chores = () => {
     },
   });
 
-  // Toggle chore completion mutation
   const toggleChore = useMutation({
     mutationFn: async ({ choreId, completed }: { choreId: string; completed: boolean }) => {
       const { error } = await supabase
@@ -220,20 +227,25 @@ const Chores = () => {
       <div className="max-w-4xl mx-auto space-y-4">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Household Chores</h1>
-          <div className="space-x-2">
-            <Button variant="outline" onClick={() => navigate("/")}>
-              Back to Household
-            </Button>
-            <ChoreDialog
-              isOpen={isDialogOpen}
-              onOpenChange={setIsDialogOpen}
-              onSubmit={handleCreateChore}
-              title={newChoreTitle}
-              onTitleChange={setNewChoreTitle}
-              description={newChoreDescription}
-              onDescriptionChange={setNewChoreDescription}
-              isSubmitting={createChore.isPending}
-            />
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-gray-500">
+              Logged in as: {userProfile?.full_name || userProfile?.username || 'Unknown User'}
+            </div>
+            <div className="space-x-2">
+              <Button variant="outline" onClick={() => navigate("/")}>
+                Back to Household
+              </Button>
+              <ChoreDialog
+                isOpen={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+                onSubmit={handleCreateChore}
+                title={newChoreTitle}
+                onTitleChange={setNewChoreTitle}
+                description={newChoreDescription}
+                onDescriptionChange={setNewChoreDescription}
+                isSubmitting={createChore.isPending}
+              />
+            </div>
           </div>
         </div>
 
