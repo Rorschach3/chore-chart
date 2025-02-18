@@ -4,6 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
+interface Profile {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  username: string | null;
+  household_id: string | null;
+}
+
 export const MembersList = ({ householdId }: { householdId: string }) => {
   const { data: members, isLoading } = useQuery({
     queryKey: ["household-members", householdId],
@@ -14,7 +22,7 @@ export const MembersList = ({ householdId }: { householdId: string }) => {
         .eq("household_id", householdId);
 
       if (error) throw error;
-      return data;
+      return data as Profile[];
     },
     enabled: !!householdId,
   });
@@ -22,6 +30,12 @@ export const MembersList = ({ householdId }: { householdId: string }) => {
   if (isLoading) {
     return <div>Loading members...</div>;
   }
+
+  const getInitials = (fullName: string | null) => {
+    if (!fullName) return '?';
+    const names = fullName.split(' ');
+    return names.map(name => name.charAt(0).toUpperCase()).join('');
+  };
 
   return (
     <Card>
@@ -36,13 +50,12 @@ export const MembersList = ({ householdId }: { householdId: string }) => {
               <Avatar>
                 <AvatarImage src={member.avatar_url || ""} />
                 <AvatarFallback>
-                  {member.first_name?.[0]?.toUpperCase()}
-                  {member.last_name?.[0]?.toUpperCase()}
+                  {getInitials(member.full_name)}
                 </AvatarFallback>
               </Avatar>
               <div>
                 <p className="font-medium">
-                  {member.first_name} {member.last_name}
+                  {member.full_name || 'Unknown'}
                 </p>
                 {member.username && (
                   <p className="text-sm text-gray-500">@{member.username}</p>
