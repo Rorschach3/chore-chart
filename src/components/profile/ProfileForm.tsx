@@ -11,9 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ProfileData {
-  first_name: string;
-  last_name: string;
-  username: string;
+  full_name: string | null;
+  username: string | null;
   avatar_url: string | null;
 }
 
@@ -22,8 +21,7 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<ProfileData>({
-    first_name: initialData?.first_name || "",
-    last_name: initialData?.last_name || "",
+    full_name: initialData?.full_name || "",
     username: initialData?.username || "",
     avatar_url: initialData?.avatar_url || null,
   });
@@ -55,8 +53,7 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
       const { error } = await supabase
         .from('profiles')
         .update({
-          first_name: formData.first_name,
-          last_name: formData.last_name,
+          full_name: formData.full_name,
           username: formData.username,
           avatar_url: avatarUrl,
         })
@@ -91,10 +88,10 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
     }
   };
 
-  const getInitials = () => {
-    const first = formData.first_name.charAt(0);
-    const last = formData.last_name.charAt(0);
-    return (first + last).toUpperCase() || '?';
+  const getInitials = (fullName: string | null) => {
+    if (!fullName) return '?';
+    const names = fullName.split(' ');
+    return names.map(name => name.charAt(0).toUpperCase()).join('');
   };
 
   return (
@@ -108,7 +105,7 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
           <div className="flex flex-col items-center space-y-4">
             <Avatar className="h-24 w-24">
               <AvatarImage src={avatarFile ? URL.createObjectURL(avatarFile) : formData.avatar_url || ''} />
-              <AvatarFallback>{getInitials()}</AvatarFallback>
+              <AvatarFallback>{getInitials(formData.full_name)}</AvatarFallback>
             </Avatar>
             <div>
               <Input
@@ -121,30 +118,22 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
           </div>
 
           <div className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  value={formData.first_name}
-                  onChange={e => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  value={formData.last_name}
-                  onChange={e => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name</Label>
+              <Input
+                id="fullName"
+                value={formData.full_name || ''}
+                onChange={e => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
+                placeholder="Enter your full name"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input
                 id="username"
-                value={formData.username}
+                value={formData.username || ''}
                 onChange={e => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                placeholder="Enter your username"
               />
             </div>
           </div>
