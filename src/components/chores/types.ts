@@ -5,6 +5,13 @@ export type Profile = {
   username: string | null;
 };
 
+export type Household = {
+  id: string;
+  name: string;
+  manager_id: string | null;
+  rotation_interval: 'week' | '2-weeks' | 'month' | '3-months';
+};
+
 export type Chore = {
   id: string;
   title: string;
@@ -13,6 +20,13 @@ export type Chore = {
   created_at: string;
   household_id: string;
   assigned_to: string | null;
-  profiles: Profile | null;
   completion_photo: string | null;
+  profiles?: Profile;
+};
+
+export type ChoreRotation = {
+  id: string;
+  household_id: string;
+  start_date: string;
+  end_date: string;
 };

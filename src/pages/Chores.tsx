@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/AuthProvider";
 import { ChoresList } from "@/components/chores/ChoresList";
 import { ChoresHeader } from "@/components/chores/ChoresHeader";
+import { HouseholdSettings } from "@/components/chores/HouseholdSettings";
 import { useHouseholdInfo } from "@/hooks/useHouseholdInfo";
 import { useHouseholdMembers } from "@/hooks/useHouseholdMembers";
+import { useHouseholdSettings } from "@/hooks/useHouseholdSettings";
 import { useChores } from "@/hooks/useChores";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useChoreMutations } from "@/components/chores/ChoreMutations";
@@ -21,9 +23,12 @@ const Chores = () => {
 
   const { data: userInfo } = useHouseholdInfo(session);
   const { data: members } = useHouseholdMembers(userInfo?.household_id);
+  const { household, updateSettings } = useHouseholdSettings(userInfo?.household_id);
   const { data: chores = [], isLoading } = useChores(userInfo?.household_id);
   const { data: userProfile } = useUserProfile(session);
   const { createChore, deleteChore, assignChore, toggleChore } = useChoreMutations(userInfo?.household_id);
+
+  const isManager = household?.manager_id === session?.user?.id;
 
   const handleCreateChore = (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +78,13 @@ const Chores = () => {
           isSubmitting={createChore.isPending}
         />
 
+        <HouseholdSettings
+          household={household}
+          members={members || []}
+          isManager={isManager}
+          onUpdateSettings={updateSettings.mutate}
+        />
+
         <Card>
           <CardHeader>
             <CardTitle>Chores List</CardTitle>
@@ -89,7 +101,7 @@ const Chores = () => {
               <ChoresList
                 chores={chores}
                 members={members || []}
-                isAdmin={!!userInfo?.isAdmin}
+                isAdmin={isManager}
                 onToggleComplete={(choreId, completed) =>
                   toggleChore.mutate({ choreId, completed })
                 }

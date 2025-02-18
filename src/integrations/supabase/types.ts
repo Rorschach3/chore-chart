@@ -9,6 +9,35 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      chore_rotations: {
+        Row: {
+          end_date: string
+          household_id: string
+          id: string
+          start_date: string
+        }
+        Insert: {
+          end_date: string
+          household_id: string
+          id?: string
+          start_date?: string
+        }
+        Update: {
+          end_date?: string
+          household_id?: string
+          id?: string
+          start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chore_rotations_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chores: {
         Row: {
           assigned_to: string | null
@@ -65,24 +94,38 @@ export type Database = {
           created_at: string
           household_number: number
           id: string
+          manager_id: string | null
           name: string
+          rotation_interval: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           household_number?: number
           id?: string
+          manager_id?: string | null
           name: string
+          rotation_interval: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           household_number?: number
           id?: string
+          manager_id?: string | null
           name?: string
+          rotation_interval?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "households_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -155,6 +198,12 @@ export type Database = {
     }
     Functions: {
       is_household_admin: {
+        Args: {
+          household_id: string
+        }
+        Returns: boolean
+      }
+      is_household_manager: {
         Args: {
           household_id: string
         }

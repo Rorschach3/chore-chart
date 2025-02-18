@@ -16,18 +16,17 @@ export function useHouseholdInfo(session: Session | null) {
       if (profileError) throw profileError;
       if (!profile?.household_id) return { household_id: null, isAdmin: false };
 
-      const { data: roleData, error: roleError } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session?.user?.id)
-        .eq("household_id", profile.household_id)
-        .maybeSingle();
+      const { data: household, error: householdError } = await supabase
+        .from("households")
+        .select("manager_id")
+        .eq("id", profile.household_id)
+        .single();
 
-      if (roleError) throw roleError;
+      if (householdError) throw householdError;
 
       return {
         household_id: profile.household_id,
-        isAdmin: roleData?.role === "admin",
+        isAdmin: household.manager_id === session?.user?.id,
       };
     },
     enabled: !!session?.user?.id,
