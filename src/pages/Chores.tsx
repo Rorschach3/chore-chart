@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -57,12 +58,12 @@ const Chores = () => {
         .eq("household_id", userInfo?.household_id);
 
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: !!userInfo?.household_id,
   });
 
-  const { data: chores, isLoading } = useQuery<Chore[]>({
+  const { data: chores = [], isLoading } = useQuery<Chore[]>({
     queryKey: ["chores", userInfo?.household_id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -75,13 +76,14 @@ const Chores = () => {
           created_at,
           household_id,
           assigned_to,
+          completion_photo,
           profiles:profiles(id, full_name, username)
         `)
         .eq("household_id", userInfo?.household_id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: !!userInfo?.household_id,
   });
@@ -257,7 +259,7 @@ const Chores = () => {
           <CardContent>
             {isLoading ? (
               <div>Loading chores...</div>
-            ) : chores?.length === 0 ? (
+            ) : chores.length === 0 ? (
               <div className="text-center py-4 text-gray-500">
                 No chores yet. Add your first chore!
               </div>
