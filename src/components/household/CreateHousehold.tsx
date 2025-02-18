@@ -20,7 +20,11 @@ export const CreateHousehold = () => {
 
       const { data: householdData, error: householdError } = await supabase
         .from("households")
-        .insert([{ name: newHouseholdName }])
+        .insert([{ 
+          name: newHouseholdName, 
+          rotation_interval: 'week',
+          manager_id: user.id // Set creator as initial manager
+        }])
         .select()
         .single();
 
@@ -38,7 +42,7 @@ export const CreateHousehold = () => {
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Household created successfully!",
+        description: "Household created successfully! You are now the house manager.",
       });
       setNewHouseholdName("");
       queryClient.invalidateQueries({ queryKey: ["profile"] });

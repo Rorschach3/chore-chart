@@ -17,14 +17,15 @@ export function useHouseholdSettings(householdId: string | null) {
           id,
           name,
           manager_id,
-          rotation_interval,
-          profiles!manager_id(username)
+          rotation_interval
         `)
         .eq("id", householdId)
         .single();
 
       if (error) throw error;
-      return data;
+      if (!data) throw new Error("Household not found");
+
+      return data as Household;
     },
     enabled: !!householdId,
   });

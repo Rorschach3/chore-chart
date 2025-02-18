@@ -82,6 +82,7 @@ const Chores = () => {
           household={household}
           members={members || []}
           isManager={isManager}
+          currentUserId={session?.user?.id || ""}
           onUpdateSettings={updateSettings.mutate}
         />
 

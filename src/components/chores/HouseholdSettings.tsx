@@ -1,4 +1,3 @@
-
 import {
   Select,
   SelectContent,
@@ -7,12 +6,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import type { Profile, Household } from "./types";
 
 interface HouseholdSettingsProps {
   household: Household | undefined;
   members: Profile[];
   isManager: boolean;
+  currentUserId: string;
   onUpdateSettings: (settings: { managerId?: string; rotationInterval?: Household["rotation_interval"] }) => void;
 }
 
@@ -20,11 +21,13 @@ export function HouseholdSettings({
   household,
   members,
   isManager,
+  currentUserId,
   onUpdateSettings,
 }: HouseholdSettingsProps) {
   if (!household) return null;
 
   const managerProfile = members.find(m => m.id === household.manager_id);
+  const currentUserProfile = members.find(m => m.id === currentUserId);
 
   return (
     <Card>
@@ -54,11 +57,22 @@ export function HouseholdSettings({
               </SelectContent>
             </Select>
           ) : (
-            <div className="text-sm text-gray-500">
-              {managerProfile ? (
-                managerProfile.full_name || managerProfile.username
-              ) : (
-                "No manager assigned"
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-gray-500">
+                {managerProfile ? (
+                  managerProfile.full_name || managerProfile.username
+                ) : (
+                  "No manager assigned"
+                )}
+              </div>
+              {!household.manager_id && currentUserProfile && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onUpdateSettings({ managerId: currentUserId })}
+                >
+                  Become House Manager
+                </Button>
               )}
             </div>
           )}
