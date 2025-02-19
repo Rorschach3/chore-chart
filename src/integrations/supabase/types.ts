@@ -134,9 +134,9 @@ export type Database = {
           full_name: string | null
           household_id: string | null
           id: string
+          Role: Database["public"]["Enums"]["app_role"] | null
           updated_at: string | null
           username: string | null
-          website: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -144,9 +144,9 @@ export type Database = {
           full_name?: string | null
           household_id?: string | null
           id: string
+          Role?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string | null
           username?: string | null
-          website?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -154,9 +154,9 @@ export type Database = {
           full_name?: string | null
           household_id?: string | null
           id?: string
+          Role?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string | null
           username?: string | null
-          website?: string | null
         }
         Relationships: []
       }
