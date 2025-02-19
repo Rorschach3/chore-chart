@@ -203,12 +203,17 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_household_manager: {
-        Args: {
-          household_id: string
-        }
-        Returns: boolean
-      }
+      is_household_manager:
+        | {
+            Args: Record<PropertyKey, never>
+            Returns: boolean
+          }
+        | {
+            Args: {
+              household_id: string
+            }
+            Returns: boolean
+          }
     }
     Enums: {
       app_role: "admin" | "member"
