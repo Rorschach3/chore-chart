@@ -214,6 +214,10 @@ export type Database = {
             }
             Returns: boolean
           }
+      rotate_household_chores: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "member"
