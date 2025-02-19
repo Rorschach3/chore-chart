@@ -110,8 +110,8 @@ export function ChoresList({
               <TableCell>
                 {isAdmin ? (
                   <Select
-                    value={chore.assigned_to || ""}
-                    onValueChange={(value) => onAssign(chore.id, value || null)}
+                    value={chore.assigned_to || "unassigned"}
+                    onValueChange={(value) => onAssign(chore.id, value === "unassigned" ? null : value)}
                   >
                     <SelectTrigger className="w-[200px]">
                       <SelectValue>
@@ -123,7 +123,7 @@ export function ChoresList({
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Unassigned</SelectItem>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
                       {members?.map((member) => (
                         <SelectItem key={member.id} value={member.id}>
                           {member.full_name || member.username}
