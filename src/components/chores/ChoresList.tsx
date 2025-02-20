@@ -1,8 +1,6 @@
-
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ChoreItem } from "./ChoreItem";
 import type { Profile, Chore } from "./types";
-
 interface ChoresListProps {
   chores: Chore[];
   members: Profile[];
@@ -11,21 +9,20 @@ interface ChoresListProps {
   onAssign: (choreId: string, userId: string | null) => void;
   onDelete: (choreId: string) => void;
 }
-
 export function ChoresList({
   chores,
   members,
   isAdmin,
   onToggleComplete,
   onAssign,
-  onDelete,
+  onDelete
 }: ChoresListProps) {
-  return (
-    <Table>
+  return <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="w-12">Done</TableHead>
-          <TableHead>Title</TableHead>
+          <TableHead className="w-4">Done</TableHead>
+          <TableHead>
+        </TableHead>
           <TableHead>Description</TableHead>
           <TableHead>Assigned To</TableHead>
           <TableHead>Photo</TableHead>
@@ -33,18 +30,7 @@ export function ChoresList({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {chores.map((chore) => (
-          <ChoreItem
-            key={chore.id}
-            chore={chore}
-            members={members}
-            isAdmin={isAdmin}
-            onToggleComplete={onToggleComplete}
-            onAssign={onAssign}
-            onDelete={onDelete}
-          />
-        ))}
+        {chores.map(chore => <ChoreItem key={chore.id} chore={chore} members={members} isAdmin={isAdmin} onToggleComplete={onToggleComplete} onAssign={onAssign} onDelete={onDelete} />)}
       </TableBody>
-    </Table>
-  );
+    </Table>;
 }
