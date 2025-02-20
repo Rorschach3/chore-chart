@@ -12,6 +12,7 @@ import { useHouseholdSettings } from "@/hooks/useHouseholdSettings";
 import { useChores } from "@/hooks/useChores";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useChoreMutations } from "@/components/chores/ChoreMutations";
+
 const Chores = () => {
   const [newChoreTitle, setNewChoreTitle] = useState("");
   const [newChoreDescription, setNewChoreDescription] = useState("");
@@ -43,7 +44,9 @@ const Chores = () => {
     assignChore,
     toggleChore
   } = useChoreMutations(userInfo?.household_id);
+
   const isManager = household?.manager_id === session?.user?.id;
+
   const handleCreateChore = (e: React.FormEvent) => {
     e.preventDefault();
     if (newChoreTitle.trim()) {
@@ -59,6 +62,7 @@ const Chores = () => {
       });
     }
   };
+
   if (!userInfo?.household_id) {
     return <div className="min-h-screen p-4 flex items-center justify-center">
         <Card>
@@ -72,33 +76,58 @@ const Chores = () => {
         </Card>
       </div>;
   }
+
   return <div className="min-h-screen p-4 bg-gray-50">
       <div className="max-w-4xl mx-auto space-y-4">
-        <ChoresHeader username={userProfile?.full_name || userProfile?.username} isDialogOpen={isDialogOpen} onOpenChange={setIsDialogOpen} onNavigateBack={() => navigate("/")} onCreateChore={handleCreateChore} title={newChoreTitle} onTitleChange={setNewChoreTitle} description={newChoreDescription} onDescriptionChange={setNewChoreDescription} isSubmitting={createChore.isPending} />
+        <ChoresHeader 
+          username={userProfile?.full_name || userProfile?.username} 
+          isDialogOpen={isDialogOpen} 
+          onOpenChange={setIsDialogOpen} 
+          onNavigateBack={() => navigate("/")} 
+          onCreateChore={handleCreateChore} 
+          title={newChoreTitle} 
+          onTitleChange={setNewChoreTitle} 
+          description={newChoreDescription} 
+          onDescriptionChange={setNewChoreDescription} 
+          isSubmitting={createChore.isPending} 
+        />
 
-        <HouseholdSettings household={household} members={members || []} isManager={isManager} currentUserId={session?.user?.id || ""} onUpdateSettings={updateSettings.mutate} />
+        <HouseholdSettings 
+          household={household} 
+          members={members || []} 
+          isManager={isManager} 
+          currentUserId={session?.user?.id || ""} 
+          onUpdateSettings={updateSettings.mutate} 
+        />
 
         <Card>
-          <CardHeader className="text-xs ">
-            <CardTitle>Chores List</CardTitle>
-            <CardDescription>Manage your household chores    
-
-
-(A picture of the completed task is needed to mark as complete)</CardDescription>
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold">Chores List</CardTitle>
+            <CardDescription>
+              Manage your household chores (A picture of the completed task is needed to mark as complete)
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? <div>Loading chores...</div> : chores.length === 0 ? <div className="text-center py-4 text-gray-500">
+            {isLoading ? (
+              <div className="text-center py-4">Loading chores...</div>
+            ) : chores.length === 0 ? (
+              <div className="text-center py-4 text-gray-500">
                 No chores yet. Add your first chore!
-              </div> : <ChoresList chores={chores} members={members || []} isAdmin={isManager} onToggleComplete={(choreId, completed) => toggleChore.mutate({
-            choreId,
-            completed
-          })} onAssign={(choreId, userId) => assignChore.mutate({
-            choreId,
-            userId
-          })} onDelete={choreId => deleteChore.mutate(choreId)} />}
+              </div>
+            ) : (
+              <ChoresList 
+                chores={chores} 
+                members={members || []} 
+                isAdmin={isManager} 
+                onToggleComplete={(choreId, completed) => toggleChore.mutate({ choreId, completed })} 
+                onAssign={(choreId, userId) => assignChore.mutate({ choreId, userId })} 
+                onDelete={choreId => deleteChore.mutate(choreId)} 
+              />
+            )}
           </CardContent>
         </Card>
       </div>
     </div>;
 };
+
 export default Chores;
