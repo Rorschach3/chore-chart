@@ -2,13 +2,22 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { ChoreIcon } from "./types";
 
 export function useChoreMutations(householdId: string | null) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const createChore = useMutation({
-    mutationFn: async ({ title, description }: { title: string; description: string }) => {
+    mutationFn: async ({ 
+      title, 
+      description, 
+      icon 
+    }: { 
+      title: string; 
+      description: string;
+      icon: ChoreIcon | null;
+    }) => {
       if (!householdId) throw new Error("No household selected");
 
       const { error } = await supabase.from("chores").insert([
@@ -16,6 +25,7 @@ export function useChoreMutations(householdId: string | null) {
           title,
           description,
           household_id: householdId,
+          icon
         },
       ]);
 

@@ -3,6 +3,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Trash2 } from "lucide-react";
+import * as icons from "lucide-react";
 import { PhotoUploadDialog } from "./PhotoUploadDialog";
 import { ChoreAssignment } from "./ChoreAssignment";
 import type { Chore, Profile } from "./types";
@@ -24,6 +25,8 @@ export function ChoreItem({
   onAssign,
   onDelete
 }: ChoreItemProps) {
+  const IconComponent = chore.icon ? icons[chore.icon as keyof typeof icons] : null;
+
   return (
     <TableRow>
       <TableCell className="w-[50px] text-center">
@@ -34,7 +37,10 @@ export function ChoreItem({
         />
       </TableCell>
       <TableCell className={chore.completed ? "line-through text-gray-500" : ""}>
-        {chore.title}
+        <div className="flex items-center gap-2">
+          {IconComponent && <IconComponent className="h-4 w-4" />}
+          {chore.title}
+        </div>
       </TableCell>
       <TableCell className={chore.completed ? "line-through text-gray-500" : ""}>
         {chore.description}

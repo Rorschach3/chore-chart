@@ -12,6 +12,8 @@ export type Household = {
   rotation_interval: 'week' | '2-weeks' | 'month' | '3-months';
 };
 
+export type ChoreIcon = 'broom' | 'washing-machine' | 'vacuum' | 'leaf' | 'hammer' | 'screwdriver' | 'paint-roller' | 'trash' | 'lightbulb';
+
 export type Chore = {
   id: string;
   title: string;
@@ -21,6 +23,7 @@ export type Chore = {
   household_id: string;
   assigned_to: string | null;
   completion_photo: string | null;
+  icon: ChoreIcon | null;
   profiles?: Profile;
 };
 
