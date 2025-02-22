@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "./components/AuthProvider";
 import { ThemeProvider } from "next-themes";
 import { Navbar } from "./components/layout/Navbar";
 import { Footer } from "./components/layout/Footer";
+import { ChatButton } from "./components/chat/ChatButton";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Chores from "./pages/Chores";
@@ -39,7 +40,12 @@ function Layout({ children }: { children: React.ReactNode }) {
       <main className="flex-1">
         {children}
       </main>
-      {session && <Footer />}
+      {session && (
+        <>
+          <Footer />
+          <ChatButton />
+        </>
+      )}
     </div>
   );
 }
