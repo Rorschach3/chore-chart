@@ -8,15 +8,46 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Github, Mail, Facebook, Twitter } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
+import { User } from '@supabase/supabase-js';
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [username, setUsername] = useState("");
+  const [fullName, setFullName] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const handleProfileSetup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user?.id,
+          username,
+          full_name: fullName,
+        });
+
+      if (error) throw error;
+
+      navigate("/");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,13 +72,11 @@ export default function Auth() {
           });
           setIsSignUp(false);
         } else {
-          toast({
-            title: "Success!",
-            description: "Please check your email to verify your account.",
-          });
+          setUser(data.user);
+          setShowProfileSetup(true);
         }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
@@ -62,7 +91,19 @@ export default function Auth() {
           }
         }
         
-        navigate("/");
+        // Check if profile exists
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username, full_name')
+          .eq('id', data.user.id)
+          .single();
+
+        if (!profile?.username || !profile?.full_name) {
+          setUser(data.user);
+          setShowProfileSetup(true);
+        } else {
+          navigate("/");
+        }
       }
     } catch (error: any) {
       toast({
@@ -81,7 +122,7 @@ export default function Auth() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}/auth`,
         },
       });
       
@@ -95,6 +136,54 @@ export default function Auth() {
       console.error("Social auth error:", error);
     }
   };
+
+  if (showProfileSetup) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+        <Card className="w-full max-w-md animate-fade-in">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold tracking-tight">
+              Complete Your Profile
+            </CardTitle>
+            <CardDescription>
+              Please provide some additional information to complete your profile
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleProfileSetup} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Choose a username"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Enter your full name"
+                  required
+                />
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={loading}
+              >
+                {loading ? "Saving..." : "Complete Profile"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
