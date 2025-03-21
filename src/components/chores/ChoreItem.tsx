@@ -2,20 +2,20 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, Broom, WashingMachine, Vacuum, Leaf, Hammer, Screwdriver, PaintRoller, Trash, Lightbulb } from "lucide-react";
+import { Trash2, Brush, Shirt, Wind, Leaf, Hammer, Tool, Paintbrush, Lightbulb } from "lucide-react";
 import { PhotoUploadDialog } from "./PhotoUploadDialog";
 import { ChoreAssignment } from "./ChoreAssignment";
 import type { Chore, Profile } from "./types";
 
 const iconMap = {
-  Broom,
-  WashingMachine,
-  Vacuum,
+  Brush,
+  Shirt,
+  Wind,
   Leaf,
   Hammer,
-  Screwdriver,
-  PaintRoller,
-  Trash,
+  Tool,
+  Paintbrush,
+  Trash2,
   Lightbulb,
 };
 
@@ -36,7 +36,7 @@ export function ChoreItem({
   onAssign,
   onDelete
 }: ChoreItemProps) {
-  const IconComponent = chore.icon ? iconMap[chore.icon] : null;
+  const IconComponent = chore.icon && iconMap[chore.icon] ? iconMap[chore.icon] : null;
 
   return (
     <TableRow>

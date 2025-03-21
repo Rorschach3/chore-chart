@@ -12,7 +12,8 @@ export type Household = {
   rotation_interval: 'week' | '2-weeks' | 'month' | '3-months';
 };
 
-export type ChoreIcon = 'Broom' | 'WashingMachine' | 'Vacuum' | 'Leaf' | 'Hammer' | 'Screwdriver' | 'PaintRoller' | 'Trash' | 'Lightbulb';
+// Use icons that actually exist in lucide-react
+export type ChoreIcon = 'Brush' | 'Shirt' | 'Wind' | 'Leaf' | 'Hammer' | 'Tool' | 'Paintbrush' | 'Trash2' | 'Lightbulb';
 
 export type Chore = {
   id: string;

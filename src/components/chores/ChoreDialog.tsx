@@ -18,18 +18,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Broom, WashingMachine, Vacuum, Leaf, Hammer, Screwdriver, PaintRoller, Trash, Lightbulb } from "lucide-react";
+import { Brush, Shirt, Wind, Leaf, Hammer, Tool, Paintbrush, Trash2, Lightbulb } from "lucide-react";
 import { ChoreIcon } from "./types";
 
-const CHORE_ICONS: { icon: ChoreIcon; label: string; component: React.FC }[] = [
-  { icon: 'Broom', label: "Sweeping", component: Broom },
-  { icon: 'WashingMachine', label: "Laundry", component: WashingMachine },
-  { icon: 'Vacuum', label: "Vacuuming", component: Vacuum },
+const CHORE_ICONS: { icon: ChoreIcon; label: string; component: React.ComponentType<any> }[] = [
+  { icon: 'Brush', label: "Cleaning", component: Brush },
+  { icon: 'Shirt', label: "Laundry", component: Shirt },
+  { icon: 'Wind', label: "Dusting", component: Wind },
   { icon: 'Leaf', label: "Yard Work", component: Leaf },
   { icon: 'Hammer', label: "Repairs", component: Hammer },
-  { icon: 'Screwdriver', label: "Maintenance", component: Screwdriver },
-  { icon: 'PaintRoller', label: "Painting", component: PaintRoller },
-  { icon: 'Trash', label: "Trash", component: Trash },
+  { icon: 'Tool', label: "Maintenance", component: Tool },
+  { icon: 'Paintbrush', label: "Painting", component: Paintbrush },
+  { icon: 'Trash2', label: "Trash", component: Trash2 },
   { icon: 'Lightbulb', label: "Utilities", component: Lightbulb },
 ];
 
@@ -89,7 +89,7 @@ export function ChoreDialog({
                 {CHORE_ICONS.map(({ icon, label, component: IconComponent }) => (
                   <SelectItem key={icon} value={icon}>
                     <div className="flex items-center gap-2">
-                      <IconComponent className="h-4 w-4" />
+                      <IconComponent size={16} />
                       <span>{label}</span>
                     </div>
                   </SelectItem>
