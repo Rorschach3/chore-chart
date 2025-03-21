@@ -82,8 +82,9 @@ const Chores = () => {
       </div>;
   }
 
-  return <div className="min-h-screen p-4 bg-gray-50">
+  return <div className="min-h-screen-10px p-4 bg-gray-800">
       <div className="max-w-4xl mx-auto space-y-4">
+        
         <ChoresHeader 
           username={userProfile?.full_name || userProfile?.username} 
           isDialogOpen={isDialogOpen} 

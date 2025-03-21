@@ -34,9 +34,9 @@ export function ChoresHeader({
 }: ChoresHeaderProps) {
   return (
     <div className="flex justify-between items-center">
-      <h1 className="text-2xl font-bold">Household Chores</h1>
+      <h1 className="text-2xl font-bold">Chores</h1>
       <div className="flex items-center gap-4">
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-gray-200">
           Logged in as: {username || 'Unknown User'}
         </div>
         <div className="space-x-2">

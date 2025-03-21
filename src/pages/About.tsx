@@ -6,7 +6,7 @@ export default function About() {
     <div className="container max-w-4xl py-8 space-y-8 animate-fade-in">
       <Card>
         <CardHeader>
-          <CardTitle className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
+          <CardTitle className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
             About ChoreChart
           </CardTitle>
         </CardHeader>
@@ -27,6 +27,23 @@ export default function About() {
           <p>
             Our mission is to make shared living spaces more organized, peaceful, and enjoyable for everyone involved.
           </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent>
+          <h1 className="text-3xl">Upcoming Changes!</h1>
+          <br></br>
+
+
+          <p>We are constantly working to improve ChoreChart. Here are some of the exciting features we have planned:</p>
+          <ul className="list-disc list-inside space-y-2 ml-4">
+
+            <li>Enhanced photo verification for task completion</li>
+            <li>Text alert notification reminders</li>
+            <li>Integration with smart home devices</li>
+            <li>Improved user interface for easier navigation</li>
+            <li>ios/android compatible mobile app</li>
+            </ul>
         </CardContent>
       </Card>
     </div>
