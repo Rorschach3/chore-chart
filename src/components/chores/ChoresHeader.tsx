@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { ChoreDialog } from "./ChoreDialog";
+import { ChoreIcon } from "./types";
 
 interface ChoresHeaderProps {
   username: string | null;
@@ -12,6 +13,8 @@ interface ChoresHeaderProps {
   onTitleChange: (value: string) => void;
   description: string;
   onDescriptionChange: (value: string) => void;
+  icon: ChoreIcon | null;
+  onIconChange: (value: ChoreIcon) => void;
   isSubmitting: boolean;
 }
 
@@ -25,6 +28,8 @@ export function ChoresHeader({
   onTitleChange,
   description,
   onDescriptionChange,
+  icon,
+  onIconChange,
   isSubmitting,
 }: ChoresHeaderProps) {
   return (
@@ -46,6 +51,8 @@ export function ChoresHeader({
             onTitleChange={onTitleChange}
             description={description}
             onDescriptionChange={onDescriptionChange}
+            icon={icon}
+            onIconChange={onIconChange}
             isSubmitting={isSubmitting}
           />
         </div>

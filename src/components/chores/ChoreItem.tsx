@@ -2,11 +2,22 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2 } from "lucide-react";
-import * as icons from "lucide-react";
+import { Trash2, Broom, WashingMachine, Vacuum, Leaf, Hammer, Screwdriver, PaintRoller, Trash, Lightbulb } from "lucide-react";
 import { PhotoUploadDialog } from "./PhotoUploadDialog";
 import { ChoreAssignment } from "./ChoreAssignment";
 import type { Chore, Profile } from "./types";
+
+const iconMap = {
+  Broom,
+  WashingMachine,
+  Vacuum,
+  Leaf,
+  Hammer,
+  Screwdriver,
+  PaintRoller,
+  Trash,
+  Lightbulb,
+};
 
 interface ChoreItemProps {
   chore: Chore;
@@ -25,7 +36,7 @@ export function ChoreItem({
   onAssign,
   onDelete
 }: ChoreItemProps) {
-  const IconComponent = chore.icon ? icons[chore.icon as keyof typeof icons] : null;
+  const IconComponent = chore.icon ? iconMap[chore.icon] : null;
 
   return (
     <TableRow>

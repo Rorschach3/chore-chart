@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,10 +13,12 @@ import { useHouseholdSettings } from "@/hooks/useHouseholdSettings";
 import { useChores } from "@/hooks/useChores";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useChoreMutations } from "@/components/chores/ChoreMutations";
+import { ChoreIcon } from "@/components/chores/types";
 
 const Chores = () => {
   const [newChoreTitle, setNewChoreTitle] = useState("");
   const [newChoreDescription, setNewChoreDescription] = useState("");
+  const [newChoreIcon, setNewChoreIcon] = useState<ChoreIcon | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const {
     session
@@ -52,11 +55,13 @@ const Chores = () => {
     if (newChoreTitle.trim()) {
       createChore.mutate({
         title: newChoreTitle,
-        description: newChoreDescription
+        description: newChoreDescription,
+        icon: newChoreIcon
       }, {
         onSuccess: () => {
           setNewChoreTitle("");
           setNewChoreDescription("");
+          setNewChoreIcon(null);
           setIsDialogOpen(false);
         }
       });
@@ -88,7 +93,9 @@ const Chores = () => {
           title={newChoreTitle} 
           onTitleChange={setNewChoreTitle} 
           description={newChoreDescription} 
-          onDescriptionChange={setNewChoreDescription} 
+          onDescriptionChange={setNewChoreDescription}
+          icon={newChoreIcon}
+          onIconChange={setNewChoreIcon}
           isSubmitting={createChore.isPending} 
         />
 

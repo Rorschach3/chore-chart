@@ -18,13 +18,14 @@ export function useChores(householdId: string | null) {
           household_id,
           assigned_to,
           completion_photo,
+          icon,
           profiles:profiles(id, full_name, username)
         `)
         .eq("household_id", householdId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return data as Chore[] || [];
     },
     enabled: !!householdId,
   });

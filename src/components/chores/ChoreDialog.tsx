@@ -18,19 +18,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import * as icons from "lucide-react";
+import { Broom, WashingMachine, Vacuum, Leaf, Hammer, Screwdriver, PaintRoller, Trash, Lightbulb } from "lucide-react";
 import { ChoreIcon } from "./types";
 
-const CHORE_ICONS: { icon: ChoreIcon; label: string }[] = [
-  { icon: "broom", label: "Sweeping" },
-  { icon: "washing-machine", label: "Laundry" },
-  { icon: "vacuum", label: "Vacuuming" },
-  { icon: "leaf", label: "Yard Work" },
-  { icon: "hammer", label: "Repairs" },
-  { icon: "screwdriver", label: "Maintenance" },
-  { icon: "paint-roller", label: "Painting" },
-  { icon: "trash", label: "Trash" },
-  { icon: "lightbulb", label: "Utilities" },
+const CHORE_ICONS: { icon: ChoreIcon; label: string; component: React.FC }[] = [
+  { icon: 'Broom', label: "Sweeping", component: Broom },
+  { icon: 'WashingMachine', label: "Laundry", component: WashingMachine },
+  { icon: 'Vacuum', label: "Vacuuming", component: Vacuum },
+  { icon: 'Leaf', label: "Yard Work", component: Leaf },
+  { icon: 'Hammer', label: "Repairs", component: Hammer },
+  { icon: 'Screwdriver', label: "Maintenance", component: Screwdriver },
+  { icon: 'PaintRoller', label: "Painting", component: PaintRoller },
+  { icon: 'Trash', label: "Trash", component: Trash },
+  { icon: 'Lightbulb', label: "Utilities", component: Lightbulb },
 ];
 
 interface ChoreDialogProps {
@@ -81,22 +81,19 @@ export function ChoreDialog({
           </div>
           <div className="space-y-2">
             <Label htmlFor="icon">Icon</Label>
-            <Select value={icon || undefined} onValueChange={onIconChange}>
+            <Select value={icon || undefined} onValueChange={(value) => onIconChange(value as ChoreIcon)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select an icon" />
               </SelectTrigger>
               <SelectContent>
-                {CHORE_ICONS.map(({ icon, label }) => {
-                  const IconComponent = icons[icon as keyof typeof icons];
-                  return (
-                    <SelectItem key={icon} value={icon}>
-                      <div className="flex items-center gap-2">
-                        <IconComponent className="h-4 w-4" />
-                        <span>{label}</span>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
+                {CHORE_ICONS.map(({ icon, label, component: IconComponent }) => (
+                  <SelectItem key={icon} value={icon}>
+                    <div className="flex items-center gap-2">
+                      <IconComponent className="h-4 w-4" />
+                      <span>{label}</span>
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
