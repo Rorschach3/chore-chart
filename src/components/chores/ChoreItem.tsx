@@ -1,94 +1,105 @@
 
-import { TableCell, TableRow } from "@/components/ui/table";
+import { useState } from "react";
+import { Chore } from "./types";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, Brush, Shirt, Wind, Leaf, Hammer, Wrench, Paintbrush, Lightbulb } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Utensils, ShowerHead, Trash, Scissors, Check, X } from "lucide-react";
 import { PhotoUploadDialog } from "./PhotoUploadDialog";
-import { ChoreAssignment } from "./ChoreAssignment";
-import type { Chore, Profile } from "./types";
 
-const iconMap = {
-  Brush,
-  Shirt,
-  Wind,
-  Leaf,
-  Hammer,
-  Wrench,
-  Paintbrush,
-  Trash2,
-  Lightbulb,
+// Icon mapping
+const iconComponents = {
+  Utensils: Utensils,
+  ShowerHead: ShowerHead,
+  Trash: Trash,
+  Scissors: Scissors,
 };
 
 interface ChoreItemProps {
   chore: Chore;
-  members: Profile[];
-  isAdmin: boolean;
-  onToggleComplete: (choreId: string, completed: boolean) => void;
-  onAssign: (choreId: string, userId: string | null) => void;
-  onDelete: (choreId: string) => void;
+  onComplete: (id: string) => void;
+  onPhotoUpload: (id: string, photo: File) => void;
+  isUpdating: boolean;
 }
 
-export function ChoreItem({
-  chore,
-  members,
-  isAdmin,
-  onToggleComplete,
-  onAssign,
-  onDelete
-}: ChoreItemProps) {
-  const IconComponent = chore.icon && iconMap[chore.icon] ? iconMap[chore.icon] : null;
+export function ChoreItem({ chore, onComplete, onPhotoUpload, isUpdating }: ChoreItemProps) {
+  const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState(false);
+  
+  const IconComponent = chore.icon ? iconComponents[chore.icon] : Utensils;
+
+  const handlePhotoUpload = (photo: File) => {
+    onPhotoUpload(chore.id, photo);
+    setIsPhotoDialogOpen(false);
+  };
 
   return (
-    <TableRow>
-      <TableCell className="w-[50px] text-center">
-        <Checkbox 
-          checked={chore.completed} 
-          onCheckedChange={checked => onToggleComplete(chore.id, checked as boolean)} 
-          disabled={!chore.completion_photo}
-        />
-      </TableCell>
-      <TableCell className={chore.completed ? "line-through text-gray-500" : ""}>
-        <div className="flex items-center gap-2">
-          {IconComponent && <IconComponent className="h-4 w-4" />}
-          {chore.title}
+    <div className="flex items-start p-4 bg-white dark:bg-gray-800 rounded-lg shadow mb-4 transition-all duration-200 hover:shadow-md">
+      <div className="mr-4 bg-primary-100 p-2 rounded-full">
+        <IconComponent className="h-6 w-6 text-primary" />
+      </div>
+      
+      <div className="flex-1">
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="font-semibold">{chore.title}</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{chore.description}</p>
+          </div>
+          
+          <Badge variant={chore.completed ? "secondary" : "outline"}>
+            {chore.completed ? "Completed" : "Pending"}
+          </Badge>
         </div>
-      </TableCell>
-      <TableCell className={chore.completed ? "line-through text-gray-500" : ""}>
-        {chore.description}
-      </TableCell>
-      <TableCell>
-        <ChoreAssignment 
-          chore={chore} 
-          members={members} 
-          isAdmin={isAdmin} 
-          onAssign={onAssign}
-        />
-      </TableCell>
-      <TableCell>
-        {chore.completion_photo ? (
-          <a 
-            href={chore.completion_photo} 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="text-blue-500 hover:text-blue-700"
-          >
-            View Photo
-          </a>
-        ) : (
-          <PhotoUploadDialog chore={chore} onPhotoUploaded={onToggleComplete} />
-        )}
-      </TableCell>
-      {isAdmin && (
-        <TableCell className="w-[50px]">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => onDelete(chore.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </TableCell>
-      )}
-    </TableRow>
+        
+        <div className="mt-2 flex justify-between items-center">
+          <div className="flex items-center">
+            <Avatar className="h-6 w-6 mr-2">
+              <AvatarFallback>
+                {chore.profiles?.full_name?.charAt(0) || '?'}
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-sm">
+              {chore.profiles?.full_name || "Unassigned"}
+            </span>
+          </div>
+          
+          {!chore.completed && (
+            <div className="flex space-x-2">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => setIsPhotoDialogOpen(true)}
+              >
+                Photo
+              </Button>
+              <Button 
+                size="sm" 
+                variant="default" 
+                onClick={() => onComplete(chore.id)}
+                disabled={isUpdating}
+              >
+                <Check className="h-4 w-4 mr-1" />
+                Complete
+              </Button>
+            </div>
+          )}
+          
+          {chore.completed && chore.completion_photo && (
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => window.open(chore.completion_photo || '', '_blank')}
+            >
+              View Photo
+            </Button>
+          )}
+        </div>
+      </div>
+      
+      <PhotoUploadDialog 
+        isOpen={isPhotoDialogOpen}
+        onOpenChange={setIsPhotoDialogOpen}
+        onUpload={handlePhotoUpload}
+      />
+    </div>
   );
 }

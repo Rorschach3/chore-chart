@@ -1,36 +1,34 @@
 
-export type Profile = {
-  id: string;
-  full_name: string | null;
-  username: string | null;
-};
+import { LucideIcon } from "lucide-react";
 
-export type Household = {
-  id: string;
-  name: string;
-  manager_id: string | null;
-  rotation_interval: 'week' | '2-weeks' | 'month' | '3-months';
-};
+export type ChoreIcon = "Utensils" | "ShowerHead" | "Trash" | "Scissors";
 
-// Use icons that actually exist in lucide-react
-export type ChoreIcon = 'Brush' | 'Shirt' | 'Wind' | 'Leaf' | 'Hammer' | 'Wrench' | 'Paintbrush' | 'Trash2' | 'Lightbulb';
-
-export type Chore = {
+export interface Chore {
   id: string;
   title: string;
-  description: string | null;
+  description: string;
   completed: boolean;
   created_at: string;
   household_id: string;
-  assigned_to: string | null;
+  assigned_to: string;
   completion_photo: string | null;
   icon: ChoreIcon | null;
-  profiles?: Profile;
-};
+  profiles?: {
+    id: string;
+    full_name: string | null;
+    username: string | null;
+  };
+}
 
-export type ChoreRotation = {
-  id: string;
-  household_id: string;
-  start_date: string;
-  end_date: string;
-};
+export interface ChoreDialogProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (e: React.FormEvent) => void;
+  title: string;
+  onTitleChange: (value: string) => void;
+  description: string;
+  onDescriptionChange: (value: string) => void;
+  icon: ChoreIcon | null;
+  onIconChange: (value: ChoreIcon) => void;
+  isSubmitting: boolean;
+}

@@ -36,16 +36,12 @@ function Layout({ children }: { children: React.ReactNode }) {
   const { session } = useAuth();
   return (
     <div className="min-h-screen flex flex-col">
-      {session && <Navbar />}
+      <Navbar />
       <main className="flex-1">
         {children}
       </main>
-      {session && (
-        <>
-          <Footer />
-          <ChatButton />
-        </>
-      )}
+      <Footer />
+      {session && <ChatButton />}
     </div>
   );
 }
