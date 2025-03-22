@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/components/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,11 +20,44 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
   const { session } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState<ProfileData>({
-    full_name: initialData?.full_name || "",
-    username: initialData?.username || "",
-    avatar_url: initialData?.avatar_url || null,
+  
+  // Fetch profile data if not provided
+  const { data: fetchedProfileData, isLoading: isProfileLoading } = useQuery({
+    queryKey: ["profileData"],
+    queryFn: async () => {
+      if (!session?.user?.id) throw new Error("Not authenticated");
+      
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("full_name, username, avatar_url")
+        .eq("id", session.user.id)
+        .single();
+        
+      if (error) throw error;
+      return data as ProfileData;
+    },
+    enabled: !!session?.user?.id && !initialData,
   });
+  
+  const profileData = initialData || fetchedProfileData;
+  
+  const [formData, setFormData] = useState<ProfileData>({
+    full_name: "",
+    username: "",
+    avatar_url: null,
+  });
+  
+  // Update local state when data is fetched
+  useState(() => {
+    if (profileData) {
+      setFormData({
+        full_name: profileData.full_name || "",
+        username: profileData.username || "",
+        avatar_url: profileData.avatar_url || null,
+      });
+    }
+  });
+  
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   const updateProfile = useMutation({
@@ -50,6 +83,7 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
         avatarUrl = publicUrl;
       }
 
+      // Only update profile data, not authentication data like email
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -67,6 +101,7 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
         description: "Profile updated successfully!",
       });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["profileData"] });
     },
     onError: (error: any) => {
       toast({
@@ -93,6 +128,10 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
     const names = fullName.split(' ');
     return names.map(name => name.charAt(0).toUpperCase()).join('');
   };
+
+  if (isProfileLoading && !initialData) {
+    return <div>Loading profile data...</div>;
+  }
 
   return (
     <Card>

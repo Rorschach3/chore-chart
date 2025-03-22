@@ -36,7 +36,7 @@ export function ChoresHeader({
     <div className="flex justify-between items-center">
       <h1 className="text-2xl font-bold">Chores</h1>
       <div className="flex items-center gap-4">
-        <div className="text-sm text-gray-200">
+        <div className="text-sm text-gray-500 dark:text-gray-400">
           Logged in as: {username || 'Unknown User'}
         </div>
         <div className="space-x-2">

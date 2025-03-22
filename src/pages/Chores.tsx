@@ -1,141 +1,197 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/components/AuthProvider";
 import { ChoresList } from "@/components/chores/ChoresList";
 import { ChoresHeader } from "@/components/chores/ChoresHeader";
-import { HouseholdSettings } from "@/components/chores/HouseholdSettings";
-import { useHouseholdInfo } from "@/hooks/useHouseholdInfo";
-import { useHouseholdMembers } from "@/hooks/useHouseholdMembers";
-import { useHouseholdSettings } from "@/hooks/useHouseholdSettings";
-import { useChores } from "@/hooks/useChores";
+import { createChore, markChoreComplete, updateChorePhoto } from "@/components/chores/ChoreMutations";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { useChoreMutations } from "@/components/chores/ChoreMutations";
+import { useHouseholdInfo } from "@/hooks/useHouseholdInfo";
+import { supabase } from "@/integrations/supabase/client";
 import { ChoreIcon } from "@/components/chores/types";
+import { useChores } from "@/hooks/useChores";
 
-const Chores = () => {
+export default function Chores() {
+  const navigate = useNavigate();
+  const { session } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { data: profile } = useUserProfile(session);
+  
+  const { data: householdInfo, isLoading: isHouseholdLoading } = useHouseholdInfo(session);
+  
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newChoreTitle, setNewChoreTitle] = useState("");
   const [newChoreDescription, setNewChoreDescription] = useState("");
-  const [newChoreIcon, setNewChoreIcon] = useState<ChoreIcon | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const {
-    session
-  } = useAuth();
-  const navigate = useNavigate();
-  const {
-    data: userInfo
-  } = useHouseholdInfo(session);
-  const {
-    data: members
-  } = useHouseholdMembers(userInfo?.household_id);
-  const {
-    household,
-    updateSettings
-  } = useHouseholdSettings(userInfo?.household_id);
-  const {
-    data: chores = [],
-    isLoading
-  } = useChores(userInfo?.household_id);
-  const {
-    data: userProfile
-  } = useUserProfile(session);
-  const {
-    createChore,
-    deleteChore,
-    assignChore,
-    toggleChore
-  } = useChoreMutations(userInfo?.household_id);
-
-  const isManager = household?.manager_id === session?.user?.id;
-
+  const [newChoreIcon, setNewChoreIcon] = useState<ChoreIcon>("Utensils");
+  
+  const { data: chores = [], isLoading: isChoresLoading } = useChores(householdInfo?.household_id);
+  
+  const createChoreMutation = useMutation({
+    mutationFn: createChore,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["chores"] });
+      setIsDialogOpen(false);
+      setNewChoreTitle("");
+      setNewChoreDescription("");
+      setNewChoreIcon("Utensils");
+      toast({
+        title: "Chore Created",
+        description: "Your new chore has been added to the list.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const markCompleteMutation = useMutation({
+    mutationFn: markChoreComplete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["chores"] });
+      toast({
+        title: "Chore Completed",
+        description: "Great job! The chore has been marked as complete.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
   const handleCreateChore = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newChoreTitle.trim()) {
-      createChore.mutate({
-        title: newChoreTitle,
-        description: newChoreDescription,
-        icon: newChoreIcon
-      }, {
-        onSuccess: () => {
-          setNewChoreTitle("");
-          setNewChoreDescription("");
-          setNewChoreIcon(null);
-          setIsDialogOpen(false);
-        }
+    
+    if (!householdInfo?.household_id) {
+      toast({
+        title: "Error",
+        description: "You must be part of a household to create chores.",
+        variant: "destructive",
       });
+      return;
     }
+    
+    createChoreMutation.mutate({
+      title: newChoreTitle,
+      description: newChoreDescription,
+      icon: newChoreIcon,
+      householdId: householdInfo.household_id,
+    });
   };
-
-  if (!userInfo?.household_id) {
-    return <div className="min-h-screen p-4 flex items-center justify-center">
-        <Card>
-          <CardHeader>
-            <CardTitle>No Household Selected</CardTitle>
-            <CardDescription>You need to create or join a household first.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => navigate("/")}>Go to Households</Button>
-          </CardContent>
-        </Card>
-      </div>;
-  }
-
-  return <div className="min-h-screen-10px p-4 bg-gray-800">
-      <div className="max-w-4xl mx-auto space-y-4">
-        
-        <ChoresHeader 
-          username={userProfile?.full_name || userProfile?.username} 
-          isDialogOpen={isDialogOpen} 
-          onOpenChange={setIsDialogOpen} 
-          onNavigateBack={() => navigate("/")} 
-          onCreateChore={handleCreateChore} 
-          title={newChoreTitle} 
-          onTitleChange={setNewChoreTitle} 
-          description={newChoreDescription} 
-          onDescriptionChange={setNewChoreDescription}
-          icon={newChoreIcon}
-          onIconChange={setNewChoreIcon}
-          isSubmitting={createChore.isPending} 
-        />
-
-        <HouseholdSettings 
-          household={household} 
-          members={members || []} 
-          isManager={isManager} 
-          currentUserId={session?.user?.id || ""} 
-          onUpdateSettings={updateSettings.mutate} 
-        />
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold">Chores List</CardTitle>
-            <CardDescription>
-              Manage your household chores (A picture of the completed task is needed to mark as complete)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="text-center py-4">Loading chores...</div>
-            ) : chores.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">
-                No chores yet. Add your first chore!
-              </div>
-            ) : (
-              <ChoresList 
-                chores={chores} 
-                members={members || []} 
-                isAdmin={isManager} 
-                onToggleComplete={(choreId, completed) => toggleChore.mutate({ choreId, completed })} 
-                onAssign={(choreId, userId) => assignChore.mutate({ choreId, userId })} 
-                onDelete={choreId => deleteChore.mutate(choreId)} 
-              />
-            )}
-          </CardContent>
-        </Card>
+  
+  const handleCompleteChore = (id: string) => {
+    markCompleteMutation.mutate(id);
+  };
+  
+  const uploadPhotoMutation = useMutation({
+    mutationFn: async ({ choreId, file }: { choreId: string; file: File }) => {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${choreId}-${Math.random()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from("chore_photos")
+        .upload(fileName, file);
+      
+      if (uploadError) throw uploadError;
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from("chore_photos")
+        .getPublicUrl(fileName);
+      
+      return updateChorePhoto(choreId, publicUrl);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["chores"] });
+      toast({
+        title: "Photo Uploaded",
+        description: "Your completion photo has been uploaded.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const handlePhotoUpload = (choreId: string, file: File) => {
+    uploadPhotoMutation.mutate({ choreId, file });
+  };
+  
+  const handleNavigateBack = () => {
+    navigate("/");
+  };
+  
+  if (isHouseholdLoading || isChoresLoading) {
+    return (
+      <div className="container py-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg font-medium">Loading...</div>
+        </div>
       </div>
-    </div>;
-};
-
-export default Chores;
+    );
+  }
+  
+  if (!householdInfo?.household_id) {
+    return (
+      <div className="container py-8">
+        <div className="flex flex-col items-center justify-center h-64 space-y-4">
+          <div className="text-lg font-medium">You don't have a household yet</div>
+          <button 
+            onClick={() => navigate("/")}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md"
+          >
+            Go create or join one
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="container py-8 space-y-8">
+      <ChoresHeader
+        username={profile?.username}
+        isDialogOpen={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onNavigateBack={handleNavigateBack}
+        onCreateChore={handleCreateChore}
+        title={newChoreTitle}
+        onTitleChange={setNewChoreTitle}
+        description={newChoreDescription}
+        onDescriptionChange={setNewChoreDescription}
+        icon={newChoreIcon}
+        onIconChange={setNewChoreIcon}
+        isSubmitting={createChoreMutation.isPending}
+      />
+      
+      {chores.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-64 space-y-4">
+          <div className="text-lg font-medium">No chores found</div>
+          <div className="text-sm text-gray-500">
+            Create your first chore to get started
+          </div>
+        </div>
+      ) : (
+        <ChoresList
+          chores={chores}
+          onComplete={handleCompleteChore}
+          onPhotoUpload={handlePhotoUpload}
+          isUpdating={markCompleteMutation.isPending || uploadPhotoMutation.isPending}
+        />
+      )}
+    </div>
+  );
+}
