@@ -9,11 +9,11 @@ export function useHouseholdMembers(householdId: string | null) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, username")
+        .select("id, full_name, username, email, avatar_url, household_id, created_at")
         .eq("household_id", householdId);
 
       if (error) throw error;
-      return data || [];
+      return data as Profile[];
     },
     enabled: !!householdId,
   });

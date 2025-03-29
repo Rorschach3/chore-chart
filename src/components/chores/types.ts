@@ -36,6 +36,8 @@ export interface Household {
   created_at: string;
   created_by: string;
   invitation_code: string;
+  manager_id?: string | null; // Added to match implementation
+  rotation_interval?: string; // Added to match implementation
 }
 
 export interface ChoreDialogProps {
@@ -59,20 +61,18 @@ export interface PhotoUploadDialogProps {
 
 export interface ChoreItemProps {
   chore: Chore;
-  members: Profile[];
-  isAdmin: boolean;
-  onToggleComplete: (choreId: string, completed: boolean) => void;
-  onAssign: (choreId: string, userId: string) => void;
-  onDelete: (choreId: string) => void;
+  onComplete: (id: string) => void;
+  onPhotoUpload: (id: string, photo: File) => void;
+  isUpdating: boolean;
 }
 
 export interface ChoresListProps {
   chores: Chore[];
-  members: Profile[];
-  isAdmin: boolean;
-  onToggleComplete: (choreId: string, completed: boolean) => void;
-  onAssign: (choreId: string, userId: string) => void;
-  onDelete: (choreId: string) => void;
+  members?: Profile[];
+  isAdmin?: boolean;
+  onToggleComplete?: (choreId: string, completed: boolean) => void;
+  onAssign?: (choreId: string, userId: string | null) => void;
+  onDelete?: (choreId: string) => void;
   onComplete: (id: string) => void;
   onPhotoUpload: (choreId: string, file: File) => void;
   isUpdating: boolean;

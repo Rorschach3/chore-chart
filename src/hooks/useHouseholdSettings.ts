@@ -17,7 +17,10 @@ export function useHouseholdSettings(householdId: string | null) {
           id,
           name,
           manager_id,
-          rotation_interval
+          rotation_interval,
+          created_at,
+          created_by: manager_id,
+          invitation_code: household_number::text
         `)
         .eq("id", householdId)
         .single();
@@ -25,7 +28,18 @@ export function useHouseholdSettings(householdId: string | null) {
       if (error) throw error;
       if (!data) throw new Error("Household not found");
 
-      return data as Household;
+      // Create a full Household object
+      const household: Household = {
+        id: data.id,
+        name: data.name,
+        created_at: data.created_at,
+        created_by: data.created_by || "",
+        invitation_code: data.invitation_code || "",
+        manager_id: data.manager_id,
+        rotation_interval: data.rotation_interval
+      };
+
+      return household;
     },
     enabled: !!householdId,
   });
@@ -36,7 +50,7 @@ export function useHouseholdSettings(householdId: string | null) {
       rotationInterval,
     }: {
       managerId?: string;
-      rotationInterval?: Household["rotation_interval"];
+      rotationInterval?: string;
     }) => {
       const { error } = await supabase
         .from("households")
