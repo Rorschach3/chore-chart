@@ -18,6 +18,7 @@ interface HouseholdDetailsProps {
     household_number?: number;
     manager_id?: string;
     created_at: string;
+    invitation_code?: string;
   };
 }
 
@@ -30,7 +31,7 @@ export function HouseholdDetails({ household }: HouseholdDetailsProps) {
   const { toast } = useToast();
   
   const isManager = household.manager_id === session?.user.id;
-  const invitationCode = household.household_number?.toString() || "";
+  const invitationCode = household.invitation_code || household.household_number?.toString() || "";
 
   const copyInviteInfo = () => {
     const inviteText = `Join my household "${household.name}" on Chore Chart!\n\nHousehold Number: ${household.household_number}\nInvitation Code: ${invitationCode}`;
@@ -115,7 +116,18 @@ export function HouseholdDetails({ household }: HouseholdDetailsProps) {
               Configure your household settings
             </DialogDescription>
           </DialogHeader>
-          <HouseholdSettings householdId={household.id} onClose={() => setShowSettings(false)} />
+          {household && members && (
+            <HouseholdSettings
+              household={household}
+              members={members}
+              isManager={isManager}
+              currentUserId={session?.user.id || ''}
+              onUpdateSettings={(settings) => {
+                console.log('Settings updated:', settings);
+                setShowSettings(false);
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
       

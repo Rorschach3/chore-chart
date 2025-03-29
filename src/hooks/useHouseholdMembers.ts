@@ -19,12 +19,12 @@ export function useHouseholdMembers(householdId: string | null) {
       // Transform the data to match our Profile type
       return data.map((profile) => ({
         id: profile.id,
-        full_name: profile.full_name,
-        username: profile.username,
+        full_name: profile.full_name || null,
+        username: profile.username || null,
         email: null, // Since email isn't in the database, set it to null to match the type
-        avatar_url: profile.avatar_url,
-        household_id: profile.household_id,
-        created_at: profile.created_at
+        avatar_url: profile.avatar_url || null,
+        household_id: profile.household_id || null,
+        created_at: profile.created_at || null
       })) as Profile[];
     },
     enabled: !!householdId,

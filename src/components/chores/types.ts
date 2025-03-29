@@ -1,4 +1,3 @@
-
 import { LucideIcon } from "lucide-react";
 
 export type ChoreIcon = "Utensils" | "ShowerHead" | "Trash" | "Scissors";
@@ -27,7 +26,7 @@ export interface Profile {
   email: string | null;
   avatar_url: string | null;
   household_id: string | null;
-  created_at: string;
+  created_at: string | null;
 }
 
 export interface Household {
@@ -35,9 +34,10 @@ export interface Household {
   name: string;
   created_at: string;
   created_by: string;
+  manager_id: string;
+  rotation_interval: string;
   invitation_code: string;
-  manager_id?: string | null; // Added to match implementation
-  rotation_interval?: string; // Added to match implementation
+  household_number?: number;
 }
 
 export interface ChoreDialogProps {

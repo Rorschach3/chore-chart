@@ -20,7 +20,8 @@ export function useHouseholdSettings(householdId: string | null) {
           rotation_interval,
           created_at,
           created_by: manager_id,
-          invitation_code: household_number::text
+          invitation_code,
+          household_number
         `)
         .eq("id", householdId)
         .single();
@@ -35,8 +36,9 @@ export function useHouseholdSettings(householdId: string | null) {
         created_at: data.created_at,
         created_by: data.created_by || "",
         invitation_code: data.invitation_code || "",
-        manager_id: data.manager_id,
-        rotation_interval: data.rotation_interval
+        manager_id: data.manager_id || "",
+        rotation_interval: data.rotation_interval || "week",
+        household_number: data.household_number
       };
 
       return household;
