@@ -19,11 +19,11 @@ export function useChores(householdId: string | undefined) {
 
       if (error) throw error;
 
-      // Handle the case where the icon column might not exist yet in the database
       // Transform the data to ensure it conforms to the Chore type
       const choresWithDefaults = data.map(chore => ({
         ...chore,
-        icon: chore.icon || "Utensils", // Provide a default icon if missing
+        // Handle the case where the icon field might be missing
+        icon: chore.icon !== undefined ? chore.icon : "Utensils",
         completion_photo: chore.completion_photo || null,
       })) as Chore[];
 

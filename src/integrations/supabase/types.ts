@@ -46,6 +46,7 @@ export type Database = {
           created_at: string
           description: string | null
           household_id: string
+          icon: string | null
           id: string
           title: string
           updated_at: string
@@ -57,6 +58,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           household_id: string
+          icon?: string | null
           id?: string
           title: string
           updated_at?: string
@@ -68,6 +70,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           household_id?: string
+          icon?: string | null
           id?: string
           title?: string
           updated_at?: string

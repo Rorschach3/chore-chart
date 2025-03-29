@@ -20,6 +20,24 @@ export interface Chore {
   };
 }
 
+export interface Profile {
+  id: string;
+  username: string | null;
+  full_name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  household_id: string | null;
+  created_at: string;
+}
+
+export interface Household {
+  id: string;
+  name: string;
+  created_at: string;
+  created_by: string;
+  invitation_code: string;
+}
+
 export interface ChoreDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -31,4 +49,31 @@ export interface ChoreDialogProps {
   icon: ChoreIcon | null;
   onIconChange: (value: ChoreIcon) => void;
   isSubmitting: boolean;
+}
+
+export interface PhotoUploadDialogProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onUpload: (photo: File) => void;
+}
+
+export interface ChoreItemProps {
+  chore: Chore;
+  members: Profile[];
+  isAdmin: boolean;
+  onToggleComplete: (choreId: string, completed: boolean) => void;
+  onAssign: (choreId: string, userId: string) => void;
+  onDelete: (choreId: string) => void;
+}
+
+export interface ChoresListProps {
+  chores: Chore[];
+  members: Profile[];
+  isAdmin: boolean;
+  onToggleComplete: (choreId: string, completed: boolean) => void;
+  onAssign: (choreId: string, userId: string) => void;
+  onDelete: (choreId: string) => void;
+  onComplete: (id: string) => void;
+  onPhotoUpload: (choreId: string, file: File) => void;
+  isUpdating: boolean;
 }

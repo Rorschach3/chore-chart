@@ -11,15 +11,21 @@ export function Navbar() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
 
-  const navItems = session ? [
+  // Public navigation items (visible to all users)
+  const publicNavItems = [
     { name: "Home", path: "/" },
-    { name: "Chores", path: "/chores" },
-    { name: "About", path: "/about" },
-    { name: "FAQ", path: "/faq" },
-  ] : [
     { name: "About", path: "/about" },
     { name: "FAQ", path: "/faq" },
   ];
+  
+  // Private navigation items (only for authenticated users)
+  const privateNavItems = session ? [
+    { name: "Dashboard", path: "/dashboard" },
+    { name: "Chores", path: "/chores" },
+  ] : [];
+  
+  // Combine the navigation items based on auth status
+  const navItems = [...publicNavItems, ...privateNavItems];
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -78,29 +84,32 @@ export function Navbar() {
                 {item.name}
               </Button>
             ))}
-            {!session && (
-              <Button
-                variant="ghost"
-                onClick={() => navigate("/auth")}
-              >
-                <LogIn className="h-5 w-5 mr-2" />
-                Sign In
-              </Button>
-            )}
           </nav>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="transition-all duration-200 hover:scale-105"
-        >
-          {theme === "dark" ? (
-            <Sun className="h-5 w-5" />
-          ) : (
-            <Moon className="h-5 w-5" />
+        <div className="flex items-center space-x-2">
+          {!session && (
+            <Button
+              variant="default"
+              onClick={() => navigate("/auth")}
+              className="hidden md:flex"
+            >
+              <LogIn className="h-5 w-5 mr-2" />
+              Sign In
+            </Button>
           )}
-        </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="transition-all duration-200 hover:scale-105"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </Button>
+        </div>
       </div>
     </header>
   );
