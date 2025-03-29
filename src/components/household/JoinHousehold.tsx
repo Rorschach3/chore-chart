@@ -18,6 +18,7 @@ import {
 
 export const JoinHousehold = () => {
   const [householdNumber, setHouseholdNumber] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -27,9 +28,10 @@ export const JoinHousehold = () => {
       const user = (await supabase.auth.getUser()).data.user;
       if (!user?.id) throw new Error("User not authenticated");
 
+      // First, verify the household exists and check if the invite code matches
       const { data: householdData, error: findError } = await supabase
         .from("households")
-        .select("id")
+        .select("id, invitation_code")
         .eq("household_number", parseInt(householdNumber))
         .single();
 
@@ -40,6 +42,14 @@ export const JoinHousehold = () => {
         throw findError;
       }
 
+      // Verify the invitation code
+      // We're checking the invitation_code (which should be the household_number as string)
+      // Additionally, we're now requiring a separate invite code for security
+      if (householdData.invitation_code !== inviteCode) {
+        throw new Error("Invalid invitation code. Please check with the household owner.");
+      }
+
+      // If verified, join the household
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ household_id: householdData.id })
@@ -55,6 +65,7 @@ export const JoinHousehold = () => {
         description: "Successfully joined household!",
       });
       setHouseholdNumber("");
+      setInviteCode("");
       setIsJoinDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["household"] });
@@ -70,8 +81,14 @@ export const JoinHousehold = () => {
 
   const handleJoinHousehold = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (householdNumber.trim()) {
+    if (householdNumber.trim() && inviteCode.trim()) {
       joinHousehold.mutate();
+    } else {
+      toast({
+        title: "Error",
+        description: "Both household number and invitation code are required.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -79,7 +96,7 @@ export const JoinHousehold = () => {
     <Card>
       <CardHeader>
         <CardTitle>Join a Household</CardTitle>
-        <CardDescription>Enter a household number to join</CardDescription>
+        <CardDescription>Enter a household number and invitation code to join</CardDescription>
       </CardHeader>
       <CardContent>
         <Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
@@ -90,7 +107,7 @@ export const JoinHousehold = () => {
             <DialogHeader>
               <DialogTitle>Join a Household</DialogTitle>
               <DialogDescription>
-                Enter the household number to join an existing household
+                Enter the household number and invitation code to join an existing household
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleJoinHousehold} className="space-y-4">
@@ -105,6 +122,17 @@ export const JoinHousehold = () => {
                   required
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="inviteCode">Invitation Code</Label>
+                <Input
+                  id="inviteCode"
+                  type="text"
+                  placeholder="Enter invitation code"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value)}
+                  required
+                />
+              </div>
               <div className="flex justify-end space-x-2">
                 <Button
                   type="button"
@@ -115,7 +143,7 @@ export const JoinHousehold = () => {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={joinHousehold.isPending || !householdNumber.trim()}
+                  disabled={joinHousehold.isPending || !householdNumber.trim() || !inviteCode.trim()}
                 >
                   {joinHousehold.isPending ? "Joining..." : "Join Household"}
                 </Button>

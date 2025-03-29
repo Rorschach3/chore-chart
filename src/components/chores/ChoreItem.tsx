@@ -4,8 +4,9 @@ import { Chore } from "./types";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Utensils, ShowerHead, Trash, Scissors, Check } from "lucide-react";
+import { Utensils, ShowerHead, Trash, Scissors, Check, Camera } from "lucide-react";
 import { PhotoUploadDialog } from "./PhotoUploadDialog";
+import { useToast } from "@/components/ui/use-toast";
 
 // Icon mapping
 const iconComponents = {
@@ -24,12 +25,27 @@ interface ChoreItemProps {
 
 export function ChoreItem({ chore, onComplete, onPhotoUpload, isUpdating }: ChoreItemProps) {
   const [isPhotoDialogOpen, setIsPhotoDialogOpen] = useState(false);
+  const { toast } = useToast();
   
   const IconComponent = chore.icon ? iconComponents[chore.icon] : Utensils;
 
   const handlePhotoUpload = (photo: File) => {
     onPhotoUpload(chore.id, photo);
     setIsPhotoDialogOpen(false);
+  };
+
+  const handleCompleteClick = () => {
+    if (!chore.completion_photo) {
+      toast({
+        title: "Photo Required",
+        description: "Please upload a photo of the completed chore before marking it as done.",
+        variant: "destructive"
+      });
+      setIsPhotoDialogOpen(true);
+      return;
+    }
+    
+    onComplete(chore.id);
   };
 
   return (
@@ -66,15 +82,16 @@ export function ChoreItem({ chore, onComplete, onPhotoUpload, isUpdating }: Chor
             <div className="flex space-x-2">
               <Button 
                 size="sm" 
-                variant="outline" 
+                variant={chore.completion_photo ? "default" : "outline"}
                 onClick={() => setIsPhotoDialogOpen(true)}
               >
-                Photo
+                <Camera className="h-4 w-4 mr-1" />
+                {chore.completion_photo ? "Change Photo" : "Upload Photo"}
               </Button>
               <Button 
                 size="sm" 
                 variant="default" 
-                onClick={() => onComplete(chore.id)}
+                onClick={handleCompleteClick}
                 disabled={isUpdating}
               >
                 <Check className="h-4 w-4 mr-1" />
