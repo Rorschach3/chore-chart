@@ -13,28 +13,19 @@ export function useHouseholdSettings(householdId: string | null) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("households")
-        .select(`
-          id,
-          name,
-          manager_id,
-          rotation_interval,
-          created_at,
-          created_by: manager_id,
-          invitation_code,
-          household_number
-        `)
+        .select("*")
         .eq("id", householdId)
         .single();
 
       if (error) throw error;
       if (!data) throw new Error("Household not found");
 
-      // Create a full Household object
+      // Create a full Household object that matches our type
       const household: Household = {
         id: data.id,
         name: data.name,
         created_at: data.created_at,
-        created_by: data.created_by || "",
+        created_by: data.manager_id || "", // Use manager_id as created_by if not available
         invitation_code: data.invitation_code || "",
         manager_id: data.manager_id || "",
         rotation_interval: data.rotation_interval || "week",

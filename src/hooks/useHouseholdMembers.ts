@@ -7,25 +7,16 @@ export function useHouseholdMembers(householdId: string | null) {
   return useQuery<Profile[]>({
     queryKey: ["householdMembers", householdId],
     queryFn: async () => {
-      // The error suggests 'email' might not exist in the profiles table
-      // Let's modify the select statement to only include columns we know exist
+      // Fetch profiles data from the database
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, username, avatar_url, household_id, created_at")
+        .select("id, full_name, username, avatar_url, household_id, created_at, updated_at, Role")
         .eq("household_id", householdId);
 
       if (error) throw error;
       
-      // Transform the data to match our Profile type
-      return data.map((profile) => ({
-        id: profile.id,
-        full_name: profile.full_name || null,
-        username: profile.username || null,
-        email: null, // Since email isn't in the database, set it to null to match the type
-        avatar_url: profile.avatar_url || null,
-        household_id: profile.household_id || null,
-        created_at: profile.created_at || null
-      })) as Profile[];
+      // Transform and cast the data to match our Profile type
+      return data as Profile[];
     },
     enabled: !!householdId,
   });

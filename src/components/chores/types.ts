@@ -1,3 +1,4 @@
+
 import { LucideIcon } from "lucide-react";
 
 export type ChoreIcon = "Utensils" | "ShowerHead" | "Trash" | "Scissors";
@@ -23,10 +24,12 @@ export interface Profile {
   id: string;
   username: string | null;
   full_name: string | null;
-  email: string | null;
+  email?: string | null;  // Make email optional
   avatar_url: string | null;
   household_id: string | null;
   created_at: string | null;
+  Role?: string | null;  // Add Role to match the database column
+  updated_at?: string | null; // Add updated_at to match the database column
 }
 
 export interface Household {

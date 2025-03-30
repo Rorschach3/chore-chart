@@ -10,6 +10,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
+import { Household } from "@/components/chores/types";
 
 interface HouseholdDetailsProps {
   household: {
@@ -19,6 +20,7 @@ interface HouseholdDetailsProps {
     manager_id?: string;
     created_at: string;
     invitation_code?: string;
+    rotation_interval?: string;
   };
 }
 
@@ -32,6 +34,18 @@ export function HouseholdDetails({ household }: HouseholdDetailsProps) {
   
   const isManager = household.manager_id === session?.user.id;
   const invitationCode = household.invitation_code || household.household_number?.toString() || "";
+
+  // Convert to proper Household type for settings component
+  const householdForSettings: Household = {
+    id: household.id,
+    name: household.name,
+    created_at: household.created_at,
+    created_by: household.manager_id || "",
+    manager_id: household.manager_id || "",
+    rotation_interval: household.rotation_interval || "week",
+    invitation_code: invitationCode,
+    household_number: household.household_number
+  };
 
   const copyInviteInfo = () => {
     const inviteText = `Join my household "${household.name}" on Chore Chart!\n\nHousehold Number: ${household.household_number}\nInvitation Code: ${invitationCode}`;
@@ -118,7 +132,7 @@ export function HouseholdDetails({ household }: HouseholdDetailsProps) {
           </DialogHeader>
           {household && members && (
             <HouseholdSettings
-              household={household}
+              household={householdForSettings}
               members={members}
               isManager={isManager}
               currentUserId={session?.user.id || ''}

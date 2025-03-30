@@ -20,11 +20,12 @@ export const CreateHousehold = () => {
 
       const { data: householdData, error: householdError } = await supabase
         .from("households")
-        .insert([{ 
+        .insert({
           name: newHouseholdName, 
           rotation_interval: 'week',
-          manager_id: user.id // Set creator as initial manager
-        }])
+          manager_id: user.id, // Set creator as initial manager
+          invitation_code: "temp" // This will be replaced by the trigger with household_number
+        })
         .select()
         .single();
 
