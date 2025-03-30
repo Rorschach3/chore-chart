@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,8 +42,6 @@ export const JoinHousehold = () => {
       }
 
       // Verify the invitation code
-      // We're checking the invitation_code (which should be the household_number as string)
-      // Additionally, we're now requiring a separate invite code for security
       if (householdData && householdData.invitation_code !== inviteCode) {
         throw new Error("Invalid invitation code. Please check with the household owner.");
       }

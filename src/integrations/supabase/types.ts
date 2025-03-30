@@ -97,6 +97,7 @@ export type Database = {
           created_at: string
           household_number: number
           id: string
+          invitation_code: string
           manager_id: string | null
           name: string
           rotation_interval: string
@@ -106,6 +107,7 @@ export type Database = {
           created_at?: string
           household_number?: number
           id?: string
+          invitation_code: string
           manager_id?: string | null
           name: string
           rotation_interval: string
@@ -115,6 +117,7 @@ export type Database = {
           created_at?: string
           household_number?: number
           id?: string
+          invitation_code?: string
           manager_id?: string | null
           name?: string
           rotation_interval?: string
