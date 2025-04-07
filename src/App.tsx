@@ -10,13 +10,10 @@ import { Navbar } from "./components/layout/Navbar";
 import { Footer } from "./components/layout/Footer";
 import { ChatButton } from "./components/chat/ChatButton";
 import Index from "./pages/Index";
-import LandingPage from "./pages/LandingPage";
 import Auth from "./pages/Auth";
 import Chores from "./pages/Chores";
 import About from "./pages/About";
 import FAQ from "./pages/FAQ";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,12 +36,16 @@ function Layout({ children }: { children: React.ReactNode }) {
   const { session } = useAuth();
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      {session && <Navbar />}
       <main className="flex-1">
         {children}
       </main>
-      <Footer />
-      {session && <ChatButton />}
+      {session && (
+        <>
+          <Footer />
+          <ChatButton />
+        </>
+      )}
     </div>
   );
 }
@@ -59,9 +60,8 @@ const App = () => (
           <BrowserRouter>
             <Layout>
               <Routes>
-                <Route path="/" element={<LandingPage />} />
                 <Route
-                  path="/dashboard"
+                  path="/"
                   element={
                     <PrivateRoute>
                       <Index />
@@ -76,10 +76,22 @@ const App = () => (
                     </PrivateRoute>
                   }
                 />
-                <Route path="/about" element={<About />} />
-                <Route path="/faq" element={<FAQ />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/terms" element={<Terms />} />
+                <Route
+                  path="/about"
+                  element={
+                    <PrivateRoute>
+                      <About />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/faq"
+                  element={
+                    <PrivateRoute>
+                      <FAQ />
+                    </PrivateRoute>
+                  }
+                />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

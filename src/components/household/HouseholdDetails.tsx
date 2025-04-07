@@ -1,181 +1,144 @@
-
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Settings2, Clipboard, CalendarClock } from "lucide-react";
-import { useHouseholdMembers } from "@/hooks/useHouseholdMembers";
-import { MembersList } from "@/components/profile/MembersList";
-import { HouseholdSettings } from "@/components/chores/HouseholdSettings";
-import { useAuth } from "@/components/AuthProvider";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { Household } from "@/components/chores/types";
-
+import { supabase } from "@/integrations/supabase/client";
+import { ListTodo, Copy, User } from "lucide-react";
+import { ProfileForm } from "@/components/profile/ProfileForm";
+import { MembersList } from "@/components/profile/MembersList";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 interface HouseholdDetailsProps {
   household: {
     id: string;
     name: string;
-    household_number?: number;
-    manager_id?: string;
-    created_at: string;
-    invitation_code?: string;
-    rotation_interval?: string;
+    household_number: number;
   };
 }
-
-export function HouseholdDetails({ household }: HouseholdDetailsProps) {
+export const HouseholdDetails = ({
+  household
+}: HouseholdDetailsProps) => {
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const {
+    toast
+  } = useToast();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { session } = useAuth();
-  const { data: members, isLoading } = useHouseholdMembers(household.id);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const { toast } = useToast();
-  
-  const isManager = household.manager_id === session?.user.id;
-  const invitationCode = household.invitation_code || household.household_number?.toString() || "";
-
-  // Convert to proper Household type for settings component
-  const householdForSettings: Household = {
-    id: household.id,
-    name: household.name,
-    created_at: household.created_at,
-    created_by: household.manager_id || "",
-    manager_id: household.manager_id || "",
-    rotation_interval: household.rotation_interval || "week",
-    invitation_code: invitationCode,
-    household_number: household.household_number
-  };
-
-  const copyInviteInfo = () => {
-    const inviteText = `Join my household "${household.name}" on Chore Chart!\n\nHousehold Number: ${household.household_number}\nInvitation Code: ${invitationCode}`;
-    navigator.clipboard.writeText(inviteText);
+  const deleteHousehold = useMutation({
+    mutationFn: async () => {
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user?.id) throw new Error("User not authenticated");
+      const {
+        error: profileError
+      } = await supabase.from("profiles").update({
+        household_id: null
+      }).eq("id", user.id);
+      if (profileError) throw profileError;
+      const {
+        error: householdError
+      } = await supabase.from("households").delete().eq("id", household.id);
+      if (householdError) throw householdError;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Household deleted successfully!"
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["profile"]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["household"]
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+  const copyHouseholdNumber = () => {
+    navigator.clipboard.writeText(household.household_number.toString());
     toast({
       title: "Copied!",
-      description: "Invitation details copied to clipboard",
+      description: "Household number copied to clipboard"
     });
   };
-
-  const handleNavigateToChores = () => {
-    navigate("/chores");
-  };
-
-  return (
-    <div className="space-y-6">
-      <Card className="transform transition-all duration-200 hover:shadow-lg">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-2xl">{household.name}</CardTitle>
-          <CardDescription>
-            Household #{household.household_number}
-          </CardDescription>
+  return <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Your Household</CardTitle>
+          <CardDescription>Manage your household and members</CardDescription>
         </CardHeader>
-        
         <CardContent className="space-y-4">
-          <div className="flex flex-col lg:flex-row gap-4 mt-2">
-            <Button 
-              variant="default"
-              className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
-              onClick={handleNavigateToChores}
-            >
-              <CalendarClock className="mr-2 h-4 w-4" />
-              Manage Chores
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              className="flex-1 transition-all duration-200 hover:bg-purple-50 dark:hover:bg-slate-800"
-              onClick={() => setShowInviteDialog(true)}
-            >
-              <Clipboard className="mr-2 h-4 w-4" />
-              Invite Members
-            </Button>
-            
-            {isManager && (
-              <Button 
-                variant="outline" 
-                className="flex-1 transition-all duration-200 hover:bg-purple-50 dark:hover:bg-slate-800"
-                onClick={() => setShowSettings(true)}
-              >
-                <Settings2 className="mr-2 h-4 w-4" />
-                Household Settings
-              </Button>
-            )}
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold">{household.name}</h2>
+            <div className="flex items-center space-x-2">
+              <p className="text-sm text-gray-500">
+                Household Number: {household.household_number}
+              </p>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={copyHouseholdNumber} className="h-6 w-6">
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Copy household number</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           </div>
           
-          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-            <div className="flex items-center mb-2">
-              <Users className="h-5 w-5 mr-2 text-purple-500" />
-              <h3 className="font-medium">Members</h3>
-            </div>
-            {isLoading ? (
-              <p className="text-sm text-gray-500">Loading members...</p>
-            ) : (
-              <MembersList members={members || []} />
-            )}
+          <div className="flex space-x-2">
+            <Button className="flex items-center space-x-2" onClick={() => navigate("/chores")}>
+              <ListTodo className="h-4 w-4" />
+              <span>Manage Chores</span>
+            </Button>
+
+            <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+              <DialogTrigger asChild>
+                
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>Edit Profile</DialogTitle>
+                </DialogHeader>
+                <ProfileForm />
+              </DialogContent>
+            </Dialog>
+            
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">Delete Household</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete your household
+                    and remove all associated data.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => deleteHousehold.mutate()} className="bg-red-500 hover:bg-red-600">
+                    {deleteHousehold.isPending ? "Deleting..." : "Delete"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </CardContent>
-        
-        <CardFooter className="flex justify-between pt-0">
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            {isManager ? "You're the household manager" : ""}
-          </div>
-        </CardFooter>
       </Card>
-      
-      <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Household Settings</DialogTitle>
-            <DialogDescription>
-              Configure your household settings
-            </DialogDescription>
-          </DialogHeader>
-          {household && members && (
-            <HouseholdSettings
-              household={householdForSettings}
-              members={members}
-              isManager={isManager}
-              currentUserId={session?.user.id || ''}
-              onUpdateSettings={(settings) => {
-                console.log('Settings updated:', settings);
-                setShowSettings(false);
-              }}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Invite Members</DialogTitle>
-            <DialogDescription>
-              Share these details with people you want to invite to your household
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-[1fr_auto] items-center gap-2">
-              <div>
-                <p className="text-sm font-medium mb-1">Household Number</p>
-                <p className="text-2xl font-bold">{household.household_number}</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-[1fr_auto] items-center gap-2">
-              <div>
-                <p className="text-sm font-medium mb-1">Invitation Code</p>
-                <p className="text-2xl font-bold">{invitationCode}</p>
-              </div>
-            </div>
-            <Button className="w-full" onClick={copyInviteInfo}>
-              <Clipboard className="mr-2 h-4 w-4" />
-              Copy Invitation Details
-            </Button>
-            <p className="text-xs text-gray-500 mt-2">
-              Anyone with both the household number and invitation code can join your household.
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+
+      <MembersList householdId={household.id} />
+    </div>;
+};

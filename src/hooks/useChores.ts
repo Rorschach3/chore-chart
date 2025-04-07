@@ -1,33 +1,43 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Chore } from "@/components/chores/types";
+import type { Chore } from "@/components/chores/types";
 
-export function useChores(householdId: string | undefined) {
-  return useQuery({
+export function useChores(householdId: string | null) {
+  return useQuery<Chore[]>({
     queryKey: ["chores", householdId],
     queryFn: async () => {
-      if (!householdId) return [];
+      try {
+        const { data, error } = await supabase
+          .from("chores")
+          .select(`
+            id,
+            title,
+            description,
+            completed,
+            created_at,
+            household_id,
+            assigned_to,
+            completion_photo,
+            icon,
+            profiles:profiles(id, full_name, username)
+          `)
+          .eq("household_id", householdId)
+          .order("created_at", { ascending: false });
 
-      const { data, error } = await supabase
-        .from("chores")
-        .select(`
-          *,
-          profiles: assigned_to (id, full_name, username)
-        `)
-        .eq("household_id", householdId);
-
-      if (error) throw error;
-
-      // Transform the data to ensure it conforms to the Chore type
-      const choresWithDefaults = data.map(chore => ({
-        ...chore,
-        // Handle the case where the icon field might be missing
-        icon: chore.icon !== undefined ? chore.icon : "Utensils",
-        completion_photo: chore.completion_photo || null,
-      })) as Chore[];
-
-      return choresWithDefaults;
+        if (error) throw error;
+        
+        // Transform the data to ensure it matches the Chore type
+        const chores = data.map(chore => ({
+          ...chore,
+          icon: chore.icon as Chore['icon'] // Handle possible missing icon field
+        }));
+        
+        return chores as Chore[];
+      } catch (error) {
+        console.error("Error fetching chores:", error);
+        return [] as Chore[];
+      }
     },
     enabled: !!householdId,
   });

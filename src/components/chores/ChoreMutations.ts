@@ -1,53 +1,121 @@
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 import { ChoreIcon } from "./types";
 
-interface CreateChoreParams {
-  title: string;
-  description: string;
-  icon: ChoreIcon | null;
-  householdId: string;
-}
+export function useChoreMutations(householdId: string | null) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-export async function createChore({
-  title,
-  description,
-  icon,
-  householdId,
-}: CreateChoreParams) {
-  const { data, error } = await supabase
-    .from("chores")
-    .insert({
-      title,
-      description,
-      icon,
-      household_id: householdId,
-      completed: false,
-    })
-    .select();
+  const createChore = useMutation({
+    mutationFn: async ({ 
+      title, 
+      description, 
+      icon 
+    }: { 
+      title: string; 
+      description: string;
+      icon: ChoreIcon | null;
+    }) => {
+      if (!householdId) throw new Error("No household selected");
 
-  if (error) throw error;
-  return data;
-}
+      const { error } = await supabase.from("chores").insert([
+        {
+          title,
+          description,
+          household_id: householdId,
+          icon
+        },
+      ]);
 
-export async function markChoreComplete(choreId: string) {
-  const { data, error } = await supabase
-    .from("chores")
-    .update({ completed: true })
-    .eq("id", choreId)
-    .select();
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Chore added successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["chores"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
-  if (error) throw error;
-  return data;
-}
+  const deleteChore = useMutation({
+    mutationFn: async (choreId: string) => {
+      const { error } = await supabase.from("chores").delete().eq("id", choreId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Chore deleted successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["chores"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
-export async function updateChorePhoto(choreId: string, photoUrl: string) {
-  const { data, error } = await supabase
-    .from("chores")
-    .update({ completion_photo: photoUrl })
-    .eq("id", choreId)
-    .select();
+  const assignChore = useMutation({
+    mutationFn: async ({ choreId, userId }: { choreId: string; userId: string | null }) => {
+      const { error } = await supabase
+        .from("chores")
+        .update({ assigned_to: userId })
+        .eq("id", choreId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["chores"] });
+      toast({
+        title: "Success",
+        description: "Chore assigned successfully!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
-  if (error) throw error;
-  return data;
+  const toggleChore = useMutation({
+    mutationFn: async ({ choreId, completed }: { choreId: string; completed: boolean }) => {
+      const { error } = await supabase
+        .from("chores")
+        .update({ completed })
+        .eq("id", choreId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["chores"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  return {
+    createChore,
+    deleteChore,
+    assignChore,
+    toggleChore,
+  };
 }

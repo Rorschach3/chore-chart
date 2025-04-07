@@ -1,4 +1,3 @@
-
 import {
   Select,
   SelectContent,
@@ -15,7 +14,7 @@ interface HouseholdSettingsProps {
   members: Profile[];
   isManager: boolean;
   currentUserId: string;
-  onUpdateSettings: (settings: { managerId?: string; rotationInterval?: string }) => void;
+  onUpdateSettings: (settings: { managerId?: string; rotationInterval?: Household["rotation_interval"] }) => void;
 }
 
 export function HouseholdSettings({
@@ -33,7 +32,7 @@ export function HouseholdSettings({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>House Settings</CardTitle>
+        <CardTitle>Household Settings</CardTitle>
         <CardDescription>
           Manage chore rotation settings
         </CardDescription>
@@ -83,10 +82,10 @@ export function HouseholdSettings({
           <div className="text-sm font-medium mb-2">Rotation Interval</div>
           {isManager ? (
             <Select
-              value={household.rotation_interval || "week"}
+              value={household.rotation_interval}
               onValueChange={(value) => 
                 onUpdateSettings({ 
-                  rotationInterval: value
+                  rotationInterval: value as Household["rotation_interval"]
                 })
               }
             >

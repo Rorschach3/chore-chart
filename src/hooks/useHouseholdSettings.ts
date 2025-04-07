@@ -13,26 +13,19 @@ export function useHouseholdSettings(householdId: string | null) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("households")
-        .select("*")
+        .select(`
+          id,
+          name,
+          manager_id,
+          rotation_interval
+        `)
         .eq("id", householdId)
         .single();
 
       if (error) throw error;
       if (!data) throw new Error("Household not found");
 
-      // Create a full Household object that matches our type
-      const household: Household = {
-        id: data.id,
-        name: data.name,
-        created_at: data.created_at,
-        created_by: data.manager_id || "", // Use manager_id as created_by if not available
-        invitation_code: data.invitation_code || "",
-        manager_id: data.manager_id || "",
-        rotation_interval: data.rotation_interval || "week",
-        household_number: data.household_number
-      };
-
-      return household;
+      return data as Household;
     },
     enabled: !!householdId,
   });
@@ -43,7 +36,7 @@ export function useHouseholdSettings(householdId: string | null) {
       rotationInterval,
     }: {
       managerId?: string;
-      rotationInterval?: string;
+      rotationInterval?: Household["rotation_interval"];
     }) => {
       const { error } = await supabase
         .from("households")

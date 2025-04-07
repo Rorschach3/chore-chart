@@ -1,19 +1,50 @@
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ChoreDialogProps, ChoreIcon } from "./types";
-import { Check, Plus, Utensils, ShowerHead, Trash, Scissors } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Brush, Shirt, Wind, Leaf, Hammer, Tool, Paintbrush, Trash2, Lightbulb } from "lucide-react";
+import { ChoreIcon } from "./types";
 
-// Map of available icon options
-const iconOptions: Record<ChoreIcon, typeof Utensils> = {
-  "Utensils": Utensils,
-  "ShowerHead": ShowerHead,
-  "Trash": Trash,
-  "Scissors": Scissors,
-};
+const CHORE_ICONS: { icon: ChoreIcon; label: string; component: React.ComponentType<any> }[] = [
+  { icon: 'Brush', label: "Cleaning", component: Brush },
+  { icon: 'Shirt', label: "Laundry", component: Shirt },
+  { icon: 'Wind', label: "Dusting", component: Wind },
+  { icon: 'Leaf', label: "Yard Work", component: Leaf },
+  { icon: 'Hammer', label: "Repairs", component: Hammer },
+  { icon: 'Tool', label: "Maintenance", component: Tool },
+  { icon: 'Paintbrush', label: "Painting", component: Paintbrush },
+  { icon: 'Trash2', label: "Trash", component: Trash2 },
+  { icon: 'Lightbulb', label: "Utilities", component: Lightbulb },
+];
+
+interface ChoreDialogProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (e: React.FormEvent) => void;
+  title: string;
+  onTitleChange: (value: string) => void;
+  description: string;
+  onDescriptionChange: (value: string) => void;
+  icon: ChoreIcon | null;
+  onIconChange: (value: ChoreIcon) => void;
+  isSubmitting: boolean;
+}
 
 export function ChoreDialog({
   isOpen,
@@ -30,68 +61,59 @@ export function ChoreDialog({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Chore
-        </Button>
+        <Button>Add Chore</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create New Chore</DialogTitle>
-          <DialogDescription>
-            Add a new chore to your household task list.
-          </DialogDescription>
+          <DialogTitle>Add New Chore</DialogTitle>
+          <DialogDescription>Create a new chore for your household.</DialogDescription>
         </DialogHeader>
-
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
             <Input
               id="title"
+              placeholder="Enter chore title"
               value={title}
               onChange={(e) => onTitleChange(e.target.value)}
-              placeholder="Enter chore title"
               required
             />
           </div>
-
+          <div className="space-y-2">
+            <Label htmlFor="icon">Icon</Label>
+            <Select value={icon || undefined} onValueChange={(value) => onIconChange(value as ChoreIcon)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select an icon" />
+              </SelectTrigger>
+              <SelectContent>
+                {CHORE_ICONS.map(({ icon, label, component: IconComponent }) => (
+                  <SelectItem key={icon} value={icon}>
+                    <div className="flex items-center gap-2">
+                      <IconComponent size={16} />
+                      <span>{label}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
+              placeholder="Enter chore description (optional)"
               value={description}
               onChange={(e) => onDescriptionChange(e.target.value)}
-              placeholder="Enter chore description"
-              rows={3}
             />
           </div>
-
-          <div className="space-y-2">
-            <Label>Icon</Label>
-            <div className="grid grid-cols-4 gap-2">
-              {Object.entries(iconOptions).map(([iconName, IconComponent]) => {
-                const isSelected = icon === iconName;
-                return (
-                  <Button
-                    key={iconName}
-                    type="button"
-                    variant={isSelected ? "default" : "outline"}
-                    className={`h-12 ${isSelected ? "ring-2 ring-primary" : ""}`}
-                    onClick={() => onIconChange(iconName as ChoreIcon)}
-                  >
-                    <IconComponent className="h-6 w-6" />
-                    {isSelected && <Check className="h-3 w-3 absolute top-1 right-1" />}
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Creating..." : "Create Chore"}
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
             </Button>
-          </DialogFooter>
+            <Button type="submit" disabled={isSubmitting || !title.trim()}>
+              {isSubmitting ? "Adding..." : "Add Chore"}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

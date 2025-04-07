@@ -3,18 +3,19 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Profile } from "@/components/chores/types";
 
-interface MembersListProps {
-  members?: Profile[];
-  householdId?: string;
+interface Profile {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  username: string | null;
+  household_id: string | null;
 }
 
-export const MembersList = ({ members, householdId }: MembersListProps) => {
-  const { data: fetchedMembers, isLoading } = useQuery({
+export const MembersList = ({ householdId }: { householdId: string }) => {
+  const { data: members, isLoading } = useQuery({
     queryKey: ["household-members", householdId],
     queryFn: async () => {
-      if (!householdId) return [];
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -23,11 +24,9 @@ export const MembersList = ({ members, householdId }: MembersListProps) => {
       if (error) throw error;
       return data as Profile[];
     },
-    enabled: !!householdId && !members,
+    enabled: !!householdId,
   });
 
-  const displayMembers = members || fetchedMembers;
-  
   if (isLoading) {
     return <div>Loading members...</div>;
   }
@@ -39,25 +38,33 @@ export const MembersList = ({ members, householdId }: MembersListProps) => {
   };
 
   return (
-    <div className="space-y-4">
-      {displayMembers?.map((member) => (
-        <div key={member.id} className="flex items-center space-x-4">
-          <Avatar>
-            <AvatarImage src={member.avatar_url || ""} />
-            <AvatarFallback>
-              {getInitials(member.full_name)}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-medium">
-              {member.full_name || member.username || 'Unknown'}
-            </p>
-            {member.username && (
-              <p className="text-sm text-gray-500">@{member.username}</p>
-            )}
-          </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Household Members</CardTitle>
+        <CardDescription>People in your household</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {members?.map((member) => (
+            <div key={member.id} className="flex items-center space-x-4">
+              <Avatar>
+                <AvatarImage src={member.avatar_url || ""} />
+                <AvatarFallback>
+                  {getInitials(member.full_name)}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-medium">
+                  {member.full_name || 'Unknown'}
+                </p>
+                {member.username && (
+                  <p className="text-sm text-gray-500">@{member.username}</p>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
-    </div>
+      </CardContent>
+    </Card>
   );
 };
