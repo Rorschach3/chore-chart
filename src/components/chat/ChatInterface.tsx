@@ -63,8 +63,12 @@ export function ChatInterface() {
         body: { prompt: userMessage },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Chat error:", error);
+        throw error;
+      }
 
+      // If we received a response but no generatedText, handle it as an error
       if (!data || !data.generatedText) {
         throw new Error("No response received from the assistant");
       }
@@ -75,9 +79,20 @@ export function ChatInterface() {
       ]);
     } catch (error) {
       console.error("Chat error:", error);
+      
+      // Add a message from the assistant explaining the error
+      setMessages(prev => [
+        ...prev,
+        { 
+          role: "assistant", 
+          content: "I apologize, but I'm currently experiencing technical difficulties. " +
+            "This could be due to service limits or connectivity issues. Please try again later."
+        },
+      ]);
+      
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to get a response. Please try again.",
+        title: "Chat Service Unavailable",
+        description: "The chat assistant is currently unavailable. Please try again later.",
         variant: "destructive",
       });
     } finally {
