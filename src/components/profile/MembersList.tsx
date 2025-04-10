@@ -1,31 +1,12 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useHouseholdMembers } from "@/hooks/useHouseholdMembers";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-interface Profile {
-  id: string;
-  full_name: string | null;
-  avatar_url: string | null;
-  username: string | null;
-  household_id: string | null;
-}
+import { Skeleton } from "@/components/ui/skeleton";
+import type { Profile } from "@/components/chores/types";
 
 export const MembersList = ({ householdId }: { householdId: string }) => {
-  const { data: members, isLoading } = useQuery({
-    queryKey: ["household-members", householdId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("household_id", householdId);
-
-      if (error) throw error;
-      return data as Profile[];
-    },
-    enabled: !!householdId,
-  });
+  const { data: members, isLoading } = useHouseholdMembers(householdId);
 
   if (isLoading) {
     return <div>Loading members...</div>;

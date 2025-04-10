@@ -27,27 +27,42 @@ export const JoinHousehold = () => {
       const user = (await supabase.auth.getUser()).data.user;
       if (!user?.id) throw new Error("User not authenticated");
 
+      // Try to find household by household_number first (for backward compatibility)
       const { data: householdData, error: findError } = await supabase
         .from("households")
         .select("id")
         .eq("household_number", parseInt(householdNumber))
-        .single();
-
-      if (findError) {
-        if (findError.code === "PGRST116") {
+        .maybeSingle();
+      
+      // If not found by household_number, try to find by invitation_code
+      let householdId = householdData?.id;
+      
+      if (!householdId) {
+        const { data: inviteData, error: inviteError } = await supabase
+          .from("households")
+          .select("id")
+          .eq("invitation_code", householdNumber)
+          .maybeSingle();
+          
+        if (inviteError) {
           throw new Error("Household not found. Please check the number and try again.");
         }
-        throw findError;
+          
+        householdId = inviteData?.id;
+      }
+
+      if (!householdId) {
+        throw new Error("Household not found. Please check the number and try again.");
       }
 
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({ household_id: householdData.id })
+        .update({ household_id: householdId })
         .eq("id", user.id);
 
       if (profileError) throw profileError;
 
-      return householdData;
+      return { id: householdId };
     },
     onSuccess: () => {
       toast({
@@ -90,16 +105,15 @@ export const JoinHousehold = () => {
             <DialogHeader>
               <DialogTitle>Join a Household</DialogTitle>
               <DialogDescription>
-                Enter the household number to join an existing household
+                Enter the household number or invitation code to join an existing household
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleJoinHousehold} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="householdNumber">Household Number</Label>
+                <Label htmlFor="householdNumber">Household Number / Invitation Code</Label>
                 <Input
                   id="householdNumber"
-                  type="number"
-                  placeholder="Enter household number"
+                  placeholder="Enter household number or code"
                   value={householdNumber}
                   onChange={(e) => setHouseholdNumber(e.target.value)}
                   required

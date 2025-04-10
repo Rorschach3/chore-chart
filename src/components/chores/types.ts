@@ -3,6 +3,11 @@ export type Profile = {
   id: string;
   full_name: string | null;
   username: string | null;
+  avatar_url?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  household_id?: string | null;
+  Role?: 'admin' | 'member' | null;
 };
 
 export type Household = {
@@ -10,6 +15,10 @@ export type Household = {
   name: string;
   manager_id: string | null;
   rotation_interval: 'week' | '2-weeks' | 'month' | '3-months';
+  created_at?: string;
+  household_number?: number;
+  invitation_code: string;
+  updated_at?: string;
 };
 
 // Use icons that actually exist in lucide-react

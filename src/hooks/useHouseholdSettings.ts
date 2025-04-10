@@ -17,7 +17,11 @@ export function useHouseholdSettings(householdId: string | null) {
           id,
           name,
           manager_id,
-          rotation_interval
+          rotation_interval,
+          created_at,
+          updated_at,
+          household_number,
+          invitation_code
         `)
         .eq("id", householdId)
         .single();
