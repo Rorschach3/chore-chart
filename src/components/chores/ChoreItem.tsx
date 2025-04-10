@@ -1,8 +1,7 @@
-
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, Brush, Shirt, Wind, Leaf, Hammer, Tool, Paintbrush, Lightbulb } from "lucide-react";
+import { Trash2, Brush, Shirt, Wind, Leaf, Hammer, Paintbrush, Lightbulb } from "lucide-react";
 import { PhotoUploadDialog } from "./PhotoUploadDialog";
 import { ChoreAssignment } from "./ChoreAssignment";
 import type { Chore, Profile } from "./types";
@@ -13,7 +12,6 @@ const iconMap = {
   Wind,
   Leaf,
   Hammer,
-  Tool,
   Paintbrush,
   Trash2,
   Lightbulb,

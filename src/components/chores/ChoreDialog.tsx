@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Brush, Shirt, Wind, Leaf, Hammer, Tool, Paintbrush, Trash2, Lightbulb } from "lucide-react";
+import { Brush, Shirt, Wind, Leaf, Hammer, Paintbrush, Trash2, Lightbulb } from "lucide-react";
 import { ChoreIcon } from "./types";
 
 const CHORE_ICONS: { icon: ChoreIcon; label: string; component: React.ComponentType<any> }[] = [
@@ -27,7 +26,6 @@ const CHORE_ICONS: { icon: ChoreIcon; label: string; component: React.ComponentT
   { icon: 'Wind', label: "Dusting", component: Wind },
   { icon: 'Leaf', label: "Yard Work", component: Leaf },
   { icon: 'Hammer', label: "Repairs", component: Hammer },
-  { icon: 'Tool', label: "Maintenance", component: Tool },
   { icon: 'Paintbrush', label: "Painting", component: Paintbrush },
   { icon: 'Trash2', label: "Trash", component: Trash2 },
   { icon: 'Lightbulb', label: "Utilities", component: Lightbulb },

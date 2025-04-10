@@ -16,6 +16,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+interface HouseholdJoinResult {
+  id: string;
+}
+
 export const JoinHousehold = () => {
   const [householdNumber, setHouseholdNumber] = useState("");
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
@@ -23,7 +27,7 @@ export const JoinHousehold = () => {
   const queryClient = useQueryClient();
 
   const joinHousehold = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<HouseholdJoinResult> => {
       const user = (await supabase.auth.getUser()).data.user;
       if (!user?.id) throw new Error("User not authenticated");
 

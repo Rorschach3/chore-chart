@@ -22,7 +22,7 @@ export type Household = {
 };
 
 // Use icons that actually exist in lucide-react
-export type ChoreIcon = 'Brush' | 'Shirt' | 'Wind' | 'Leaf' | 'Hammer' | 'Tool' | 'Paintbrush' | 'Trash2' | 'Lightbulb';
+export type ChoreIcon = 'Brush' | 'Shirt' | 'Wind' | 'Leaf' | 'Hammer' | 'Paintbrush' | 'Trash2' | 'Lightbulb';
 
 export type Chore = {
   id: string;
