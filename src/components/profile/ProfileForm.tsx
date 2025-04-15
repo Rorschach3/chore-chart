@@ -9,6 +9,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ProfileData {
   full_name: string | null;
@@ -26,10 +28,34 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
     avatar_url: initialData?.avatar_url || null,
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
 
   const updateProfile = useMutation({
     mutationFn: async () => {
       if (!session?.user?.id) throw new Error("Not authenticated");
+      
+      // Check if username is already taken by another user
+      if (formData.username && formData.username !== initialData?.username) {
+        setIsCheckingUsername(true);
+        const { data: existingUser, error: checkError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', formData.username)
+          .neq('id', session.user.id)
+          .single();
+        
+        setIsCheckingUsername(false);
+        
+        if (checkError && checkError.code !== 'PGRST116') {
+          // PGRST116 means no rows returned, which is what we want
+          throw checkError;
+        }
+        
+        if (existingUser) {
+          throw new Error("Username is already taken");
+        }
+      }
 
       let avatarUrl = formData.avatar_url;
 
@@ -59,7 +85,13 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
         })
         .eq('id', session.user.id);
 
-      if (error) throw error;
+      if (error) {
+        // If we encounter a unique constraint violation
+        if (error.code === '23505') {
+          throw new Error("Username is already taken");
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
@@ -67,8 +99,11 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
         description: "Profile updated successfully!",
       });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+      setFormError(null);
     },
     onError: (error: any) => {
+      setFormError(error.message);
       toast({
         title: "Error",
         description: error.message,
@@ -79,6 +114,7 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
     updateProfile.mutate();
   };
 
@@ -94,6 +130,11 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
     return names.map(name => name.charAt(0).toUpperCase()).join('');
   };
 
+  const handleUsernameChange = (value: string) => {
+    setFormData(prev => ({ ...prev, username: value }));
+    setFormError(null); // Clear errors when user changes input
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -101,6 +142,12 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
         <CardDescription>Update your profile information</CardDescription>
       </CardHeader>
       <CardContent>
+        {formError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{formError}</AlertDescription>
+          </Alert>
+        )}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="flex flex-col items-center space-y-4">
             <Avatar className="h-24 w-24">
@@ -132,7 +179,7 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
               <Input
                 id="username"
                 value={formData.username || ''}
-                onChange={e => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                onChange={e => handleUsernameChange(e.target.value)}
                 placeholder="Enter your username"
               />
             </div>
@@ -140,10 +187,10 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
 
           <Button
             type="submit"
-            disabled={updateProfile.isPending}
+            disabled={updateProfile.isPending || isCheckingUsername}
             className="w-full"
           >
-            {updateProfile.isPending ? "Saving..." : "Save Changes"}
+            {updateProfile.isPending || isCheckingUsername ? "Saving..." : "Save Changes"}
           </Button>
         </form>
       </CardContent>
