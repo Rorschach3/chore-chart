@@ -11,11 +11,11 @@ import {
 } from "@/components/ui/sheet";
 import { ChatInterface } from "./ChatInterface";
 import { motion, AnimatePresence } from "framer-motion";
-import { useMediaQuery } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function ChatButton() {
   const [open, setOpen] = useState(false);
-  const isMobile = useMediaQuery("(max-width: 640px)");
+  const isMobile = useIsMobile();
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
