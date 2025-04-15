@@ -11,9 +11,11 @@ import {
 } from "@/components/ui/sheet";
 import { ChatInterface } from "./ChatInterface";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMediaQuery } from "@/hooks/use-mobile";
 
 export function ChatButton() {
   const [open, setOpen] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 640px)");
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -32,6 +34,7 @@ export function ChatButton() {
             variant="default"
           >
             <MessageCircle className="h-6 w-6" />
+            <span className="sr-only">Open chat assistant</span>
           </Button>
         </motion.div>
       </SheetTrigger>
@@ -39,7 +42,22 @@ export function ChatButton() {
         <SheetHeader className="px-4 py-2 border-b">
           <SheetTitle className="flex items-center">
             <MessageCircle className="h-5 w-5 mr-2" />
-            ChoreChart Assistant
+            <motion.span 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              ChoreChart Assistant
+            </motion.span>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="ml-auto" 
+              onClick={() => setOpen(false)}
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </Button>
           </SheetTitle>
         </SheetHeader>
         <div className="h-[calc(100%-53px)]">

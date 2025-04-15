@@ -1,18 +1,14 @@
 
 import { useState, useRef, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
-import { Send, Trash2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { motion, AnimatePresence } from "framer-motion";
-
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-}
+import { MessageBubble } from "./MessageBubble";
+import { ChatEmpty } from "./ChatEmpty";
+import { ChatTypingIndicator } from "./ChatTypingIndicator";
+import { ChatInput } from "./ChatInput";
+import { Message } from "./types";
+import { useCallback } from "react";
 
 export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -22,26 +18,19 @@ export function ChatInterface() {
   const [currentTypedText, setCurrentTypedText] = useState("");
   const [fullResponseText, setFullResponseText] = useState("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     if (scrollAreaRef.current) {
       const scrollArea = scrollAreaRef.current;
       scrollArea.scrollTop = scrollArea.scrollHeight;
     }
-  };
+  }, []);
 
   // Focus textarea when component mounts
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-    }
-  }, []);
-
-  useEffect(() => {
     scrollToBottom();
-  }, [messages, currentTypedText]);
+  }, [messages, currentTypedText, scrollToBottom]);
 
   // Load messages from localStorage on component mount
   useEffect(() => {
@@ -158,124 +147,37 @@ export function ChatInterface() {
     });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e);
-    }
-  };
-
-  const adjustTextareaHeight = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const textarea = e.target;
-    textarea.style.height = "auto";
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
-  };
-
   return (
     <div className="flex flex-col h-full">
       <ScrollArea
         ref={scrollAreaRef}
         className="flex-1 p-4 space-y-4"
       >
-        <AnimatePresence>
-          {messages.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="text-center text-muted-foreground p-4"
-            >
-              <p>Ask about chores, household management, or anything else...</p>
-              <p className="text-sm mt-1">Your conversation will be saved locally.</p>
-            </motion.div>
-          ) : (
-            messages.map((message, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-                className={`flex ${
-                  message.role === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
-                <div
-                  className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground ml-4 shadow-sm"
-                      : "bg-muted mr-4 shadow-sm"
-                  }`}
-                >
-                  {message.content}
-                  {index === messages.length - 1 && message.role === "assistant" && isTyping && (
-                    currentTypedText || <span className="animate-pulse">...</span>
-                  )}
-                </div>
-              </motion.div>
-            ))
-          )}
-        </AnimatePresence>
-        {isLoading && !isTyping && (
-          <div className="flex justify-start">
-            <div className="bg-muted rounded-lg px-4 py-2 mr-4 shadow-sm flex items-center">
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Thinking...
-            </div>
-          </div>
+        {messages.length === 0 ? (
+          <ChatEmpty />
+        ) : (
+          messages.map((message, index) => (
+            <MessageBubble 
+              key={index}
+              message={message}
+              isLastMessage={index === messages.length - 1}
+              isTyping={isTyping}
+              currentTypedText={currentTypedText}
+            />
+          ))
         )}
+        
+        {isLoading && !isTyping && <ChatTypingIndicator />}
       </ScrollArea>
-      <form
-        onSubmit={handleSubmit}
-        className="border-t p-4 flex gap-2 items-end"
-      >
-        <Textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(e) => {
-            setInput(e.target.value);
-            adjustTextareaHeight(e);
-          }}
-          placeholder="Ask about chores, household management, or anything else..."
-          className="min-h-[60px] max-h-[120px] resize-none transition-all"
-          onKeyDown={handleKeyDown}
-        />
-        <div className="flex flex-col gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="submit"
-                  size="icon"
-                  disabled={isLoading || !input.trim()}
-                  className="transition-all duration-200"
-                >
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="left">Send message</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          {messages.length > 0 && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    type="button" 
-                    size="icon" 
-                    variant="outline" 
-                    onClick={clearChat}
-                    className="transition-all duration-200"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left">Clear chat history</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-        </div>
-      </form>
+      
+      <ChatInput 
+        input={input}
+        setInput={setInput}
+        isLoading={isLoading}
+        handleSubmit={handleSubmit}
+        clearChat={clearChat}
+        messageCount={messages.length}
+      />
     </div>
   );
 }

@@ -9,17 +9,49 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Cache responses for frequently asked questions
+// Cache responses for frequently asked questions with a more efficient implementation
 const responseCache = new Map();
 const CACHE_TTL = 1000 * 60 * 60; // 1 hour
 
+// Regular cache cleanup instead of random chance
+let lastCacheCleanup = Date.now();
+const CLEANUP_INTERVAL = 1000 * 60 * 10; // Clean every 10 minutes
+
+function cleanupCache() {
+  const now = Date.now();
+  if (now - lastCacheCleanup > CLEANUP_INTERVAL) {
+    console.log("Cleaning up cache");
+    for (const [key, value] of responseCache.entries()) {
+      if (now - value.timestamp > CACHE_TTL) {
+        responseCache.delete(key);
+      }
+    }
+    lastCacheCleanup = now;
+  }
+}
+
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { prompt } = await req.json();
+    
+    // Validate the input
+    if (!prompt || typeof prompt !== 'string') {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid prompt provided',
+          generatedText: "I'm sorry, but I couldn't understand your request. Please provide a valid question or prompt."
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Always clean up cache on each request
+    cleanupCache();
     
     // Check if we have a cached response
     const cacheKey = prompt.trim().toLowerCase();
@@ -36,7 +68,8 @@ serve(async (req) => {
     if (!openAIApiKey) {
       return new Response(
         JSON.stringify({ 
-          error: 'OPENAI_API_KEY is not set in the environment variables'
+          error: 'OPENAI_API_KEY is not set in the environment variables',
+          generatedText: "I apologize, but the ChoreChart Assistant is not properly configured. Please contact the administrator to set up the OpenAI API key."
         }),
         { 
           status: 500, 
@@ -69,7 +102,7 @@ serve(async (req) => {
             { role: 'user', content: prompt }
           ],
           max_tokens: 1000,
-          temperature: 0.7, // Add some variability to make responses more engaging
+          temperature: 0.7,
         }),
       });
 
@@ -103,16 +136,6 @@ serve(async (req) => {
         text: generatedText,
         timestamp: Date.now()
       });
-      
-      // Clean old cache entries occasionally
-      if (Math.random() < 0.05) { // 5% chance to clean on each request
-        const now = Date.now();
-        for (const [key, value] of responseCache.entries()) {
-          if (now - value.timestamp > CACHE_TTL) {
-            responseCache.delete(key);
-          }
-        }
-      }
     } catch (apiError) {
       console.error('Error calling OpenAI API:', apiError);
       // We'll use the fallback message defined above
