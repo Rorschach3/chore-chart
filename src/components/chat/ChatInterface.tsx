@@ -3,9 +3,11 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { Send } from "lucide-react";
+import { Send, Trash2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Message {
   role: "user" | "assistant";
@@ -16,7 +18,11 @@ export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [currentTypedText, setCurrentTypedText] = useState("");
+  const [fullResponseText, setFullResponseText] = useState("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
 
   const scrollToBottom = () => {
@@ -26,9 +32,16 @@ export function ChatInterface() {
     }
   };
 
+  // Focus textarea when component mounts
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, []);
+
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, currentTypedText]);
 
   // Load messages from localStorage on component mount
   useEffect(() => {
@@ -48,6 +61,36 @@ export function ChatInterface() {
       localStorage.setItem("chat_messages", JSON.stringify(messages));
     }
   }, [messages]);
+
+  // Typing effect for AI responses
+  useEffect(() => {
+    if (isTyping && fullResponseText) {
+      let index = 0;
+      const typingInterval = setInterval(() => {
+        if (index < fullResponseText.length) {
+          setCurrentTypedText(fullResponseText.substring(0, index + 1));
+          index++;
+        } else {
+          setIsTyping(false);
+          setCurrentTypedText("");
+          setFullResponseText("");
+          clearInterval(typingInterval);
+          
+          // Add the complete message to the messages array
+          setMessages(prev => {
+            const newMessages = [...prev];
+            // Remove the last message if it's from the assistant (the typing indicator)
+            if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === "assistant") {
+              newMessages.pop();
+            }
+            return [...newMessages, { role: "assistant", content: fullResponseText }];
+          });
+        }
+      }, 15); // Adjust typing speed here
+      
+      return () => clearInterval(typingInterval);
+    }
+  }, [isTyping, fullResponseText]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,10 +116,16 @@ export function ChatInterface() {
         throw new Error("No response received from the assistant");
       }
 
+      // Start typing animation
+      setIsTyping(true);
+      setFullResponseText(data.generatedText);
+      
+      // Add a temporary message that will be updated by the typing effect
       setMessages(prev => [
         ...prev,
-        { role: "assistant", content: data.generatedText },
+        { role: "assistant", content: "" },
       ]);
+      
     } catch (error) {
       console.error("Chat error:", error);
       
@@ -109,39 +158,67 @@ export function ChatInterface() {
     });
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
+  const adjustTextareaHeight = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const textarea = e.target;
+    textarea.style.height = "auto";
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+  };
+
   return (
     <div className="flex flex-col h-full">
       <ScrollArea
         ref={scrollAreaRef}
         className="flex-1 p-4 space-y-4"
       >
-        {messages.length === 0 ? (
-          <div className="text-center text-muted-foreground p-4">
-            Ask about chores, household management, or anything else...
-          </div>
-        ) : (
-          messages.map((message, index) => (
-            <div
-              key={index}
-              className={`flex ${
-                message.role === "user" ? "justify-end" : "justify-start"
-              }`}
+        <AnimatePresence>
+          {messages.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-center text-muted-foreground p-4"
             >
-              <div
-                className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground ml-4"
-                    : "bg-muted mr-4"
+              <p>Ask about chores, household management, or anything else...</p>
+              <p className="text-sm mt-1">Your conversation will be saved locally.</p>
+            </motion.div>
+          ) : (
+            messages.map((message, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                className={`flex ${
+                  message.role === "user" ? "justify-end" : "justify-start"
                 }`}
               >
-                {message.content}
-              </div>
-            </div>
-          ))
-        )}
-        {isLoading && (
+                <div
+                  className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                    message.role === "user"
+                      ? "bg-primary text-primary-foreground ml-4 shadow-sm"
+                      : "bg-muted mr-4 shadow-sm"
+                  }`}
+                >
+                  {message.content}
+                  {index === messages.length - 1 && message.role === "assistant" && isTyping && (
+                    currentTypedText || <span className="animate-pulse">...</span>
+                  )}
+                </div>
+              </motion.div>
+            ))
+          )}
+        </AnimatePresence>
+        {isLoading && !isTyping && (
           <div className="flex justify-start">
-            <div className="bg-muted rounded-lg px-4 py-2 mr-4 animate-pulse">
+            <div className="bg-muted rounded-lg px-4 py-2 mr-4 shadow-sm flex items-center">
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               Thinking...
             </div>
           </div>
@@ -152,39 +229,50 @@ export function ChatInterface() {
         className="border-t p-4 flex gap-2 items-end"
       >
         <Textarea
+          ref={textareaRef}
           value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder="Ask about chores, household management, or anything else..."
-          className="min-h-[60px] max-h-[120px]"
-          onKeyDown={e => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSubmit(e);
-            }
+          onChange={(e) => {
+            setInput(e.target.value);
+            adjustTextareaHeight(e);
           }}
+          placeholder="Ask about chores, household management, or anything else..."
+          className="min-h-[60px] max-h-[120px] resize-none transition-all"
+          onKeyDown={handleKeyDown}
         />
         <div className="flex flex-col gap-2">
-          <Button
-            type="submit"
-            size="icon"
-            disabled={isLoading || !input.trim()}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={isLoading || !input.trim()}
+                  className="transition-all duration-200"
+                >
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">Send message</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
           {messages.length > 0 && (
-            <Button 
-              type="button" 
-              size="icon" 
-              variant="outline" 
-              onClick={clearChat}
-              title="Clear chat history"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 6h18"></path>
-                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-              </svg>
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    type="button" 
+                    size="icon" 
+                    variant="outline" 
+                    onClick={clearChat}
+                    className="transition-all duration-200"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">Clear chat history</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
       </form>
