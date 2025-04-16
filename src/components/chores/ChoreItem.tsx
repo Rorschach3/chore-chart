@@ -2,7 +2,7 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, Brush, Shirt, Wind, Leaf, Hammer, Paintbrush, Lightbulb, Award } from "lucide-react";
+import { Trash2, Brush, Shirt, Wind, Leaf, Hammer, Paintbrush, Lightbulb, Award, Shuffle } from "lucide-react";
 import { PhotoUploadDialog } from "./PhotoUploadDialog";
 import { ChoreAssignment } from "./ChoreAssignment";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -32,6 +32,7 @@ interface ChoreItemProps {
   onToggleComplete: (choreId: string, completed: boolean) => void;
   onAssign: (choreId: string, userId: string | null) => void;
   onDelete: (choreId: string) => void;
+  onReassign?: (choreId: string) => void;
 }
 
 export function ChoreItem({
@@ -40,7 +41,8 @@ export function ChoreItem({
   isAdmin,
   onToggleComplete,
   onAssign,
-  onDelete
+  onDelete,
+  onReassign
 }: ChoreItemProps) {
   const IconComponent = chore.icon && iconMap[chore.icon] ? iconMap[chore.icon] : null;
   
@@ -105,16 +107,27 @@ export function ChoreItem({
             href={chore.completion_photo} 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="text-blue-500 hover:text-blue-700"
+            className="text-blue-500 hover:text-blue-700 flex items-center"
           >
+            <Image className="h-4 w-4 mr-2" />
             View Photo
           </a>
         ) : (
           <PhotoUploadDialog chore={chore} onPhotoUploaded={onToggleComplete} />
         )}
       </TableCell>
-      {isAdmin && (
-        <TableCell className="w-[50px]">
+      <TableCell className="flex items-center gap-2">
+        {chore.assigned_to && !chore.completed && onReassign && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => onReassign(chore.id)}
+            title="Reassign this chore randomly"
+          >
+            <Shuffle className="h-4 w-4" />
+          </Button>
+        )}
+        {isAdmin && (
           <Button 
             variant="ghost" 
             size="icon" 
@@ -122,8 +135,8 @@ export function ChoreItem({
           >
             <Trash2 className="h-4 w-4" />
           </Button>
-        </TableCell>
-      )}
+        )}
+      </TableCell>
     </TableRow>
   );
 }

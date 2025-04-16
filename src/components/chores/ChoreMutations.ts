@@ -1,6 +1,7 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { ChoreIcon } from "./types";
 
 // Points awarded for completing different types of chores
@@ -10,7 +11,6 @@ const CHORE_POINTS = {
 };
 
 export function useChoreMutations(householdId: string | null) {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const createChore = useMutation({
@@ -37,17 +37,12 @@ export function useChoreMutations(householdId: string | null) {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Chore added successfully!",
-      });
+      toast.success("Chore added successfully!");
       queryClient.invalidateQueries({ queryKey: ["chores"] });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
+      toast.error("Error adding chore", {
+        description: error.message
       });
     },
   });
@@ -58,17 +53,12 @@ export function useChoreMutations(householdId: string | null) {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Chore deleted successfully!",
-      });
+      toast.success("Chore deleted successfully!");
       queryClient.invalidateQueries({ queryKey: ["chores"] });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
+      toast.error("Error deleting chore", {
+        description: error.message
       });
     },
   });
@@ -83,16 +73,11 @@ export function useChoreMutations(householdId: string | null) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["chores"] });
-      toast({
-        title: "Success",
-        description: "Chore assigned successfully!",
-      });
+      toast.success("Chore assigned successfully!");
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
+      toast.error("Error assigning chore", {
+        description: error.message
       });
     },
   });
@@ -142,10 +127,7 @@ export function useChoreMutations(householdId: string | null) {
         
         if (updateError) throw updateError;
         
-        toast({
-          title: "Points awarded!",
-          description: `${points} points earned for completing this chore`,
-        });
+        toast.success(`${points} points earned for completing this chore!`);
       }
     },
     onSuccess: () => {
@@ -154,10 +136,63 @@ export function useChoreMutations(householdId: string | null) {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
+      toast.error("Error updating chore", {
+        description: error.message
+      });
+    },
+  });
+
+  const randomlyReassignChore = useMutation({
+    mutationFn: async (choreId: string) => {
+      // Get all available household members
+      const { data: members, error: membersError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("household_id", householdId);
+      
+      if (membersError) throw membersError;
+      
+      if (!members || members.length === 0) {
+        throw new Error("No household members available for assignment");
+      }
+      
+      // Get current assignment
+      const { data: chore, error: choreError } = await supabase
+        .from("chores")
+        .select("assigned_to")
+        .eq("id", choreId)
+        .single();
+        
+      if (choreError) throw choreError;
+      
+      // Filter out the current assignee
+      const eligibleMembers = members.filter(member => member.id !== chore.assigned_to);
+      
+      if (eligibleMembers.length === 0) {
+        throw new Error("No other household members available for reassignment");
+      }
+      
+      // Randomly select a new assignee
+      const randomIndex = Math.floor(Math.random() * eligibleMembers.length);
+      const newAssignee = eligibleMembers[randomIndex];
+      
+      // Update the chore assignment
+      const { error: updateError } = await supabase
+        .from("chores")
+        .update({ assigned_to: newAssignee.id })
+        .eq("id", choreId);
+        
+      if (updateError) throw updateError;
+      
+      return newAssignee.id;
+    },
+    onSuccess: () => {
+      toast.success("Chore has been randomly reassigned!");
+      queryClient.invalidateQueries({ queryKey: ["chores"] });
+    },
+    onError: (error: any) => {
+      toast.error("Error reassigning chore", {
+        description: error.message
       });
     },
   });
@@ -167,5 +202,6 @@ export function useChoreMutations(householdId: string | null) {
     deleteChore,
     assignChore,
     toggleChore,
+    randomlyReassignChore,
   };
 }

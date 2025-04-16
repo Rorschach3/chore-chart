@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Upload } from "lucide-react";
+import { Upload, Image } from "lucide-react";
 import type { Chore } from "./types";
 import { toast } from "sonner";
 
@@ -16,6 +16,7 @@ interface PhotoUploadDialogProps {
 export function PhotoUploadDialog({ chore, onPhotoUploaded }: PhotoUploadDialogProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const handlePhotoUpload = async (choreId: string, file: File) => {
     try {
@@ -23,8 +24,12 @@ export function PhotoUploadDialog({ chore, onPhotoUploaded }: PhotoUploadDialogP
       const fileExt = file.name.split('.').pop();
       const fileName = `${choreId}-${Date.now()}.${fileExt}`;
       const filePath = `${choreId}/${fileName}`;
-
+      
       console.log("Uploading to chore-photos bucket:", filePath);
+
+      // Create a preview URL for the selected file
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewUrl(objectUrl);
 
       const { error: uploadError } = await supabase.storage
         .from('chore-photos')
@@ -38,7 +43,7 @@ export function PhotoUploadDialog({ chore, onPhotoUploaded }: PhotoUploadDialogP
         throw uploadError;
       }
 
-      // Get the public URL - make sure we specify the bucket name correctly
+      // Get the public URL - construct it properly to ensure it works
       const { data } = supabase.storage
         .from('chore-photos')
         .getPublicUrl(filePath);
@@ -89,6 +94,15 @@ export function PhotoUploadDialog({ chore, onPhotoUploaded }: PhotoUploadDialogP
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          {previewUrl && (
+            <div className="flex justify-center">
+              <img 
+                src={previewUrl} 
+                alt="Preview" 
+                className="max-h-40 object-contain rounded-md" 
+              />
+            </div>
+          )}
           <Input
             type="file"
             accept="image/*"

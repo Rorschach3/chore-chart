@@ -10,6 +10,7 @@ interface ChoresListProps {
   onToggleComplete: (choreId: string, completed: boolean) => void;
   onAssign: (choreId: string, userId: string | null) => void;
   onDelete: (choreId: string) => void;
+  onReassign?: (choreId: string) => void;
 }
 
 export function ChoresList({
@@ -18,7 +19,8 @@ export function ChoresList({
   isAdmin,
   onToggleComplete,
   onAssign,
-  onDelete
+  onDelete,
+  onReassign
 }: ChoresListProps) {
   return <Table>
       <TableHeader>
@@ -28,7 +30,7 @@ export function ChoresList({
           <TableHead>Description</TableHead>
           <TableHead>Assigned To</TableHead>
           <TableHead>Photo</TableHead>
-          {isAdmin && <TableHead className="w-[50px]">Actions</TableHead>}
+          <TableHead className="w-[100px]">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -40,7 +42,8 @@ export function ChoresList({
             isAdmin={isAdmin} 
             onToggleComplete={onToggleComplete} 
             onAssign={onAssign} 
-            onDelete={onDelete} 
+            onDelete={onDelete}
+            onReassign={onReassign}
           />
         ))}
       </TableBody>
