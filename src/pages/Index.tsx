@@ -20,7 +20,7 @@ const Index = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("household_id")
+        .select("household_id, points")
         .eq("id", session?.user?.id)
         .single();
 
@@ -36,7 +36,7 @@ const Index = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("households")
-        .select("*")
+        .select("*, invitation_code")
         .eq("id", profile.household_id)
         .single();
 
@@ -75,6 +75,11 @@ const Index = () => {
                   >
                     <User className="h-4 w-4 mr-2" />
                     <span className="hidden sm:inline">Edit Profile</span>
+                    {profile?.points ? (
+                      <span className="ml-1 text-xs bg-yellow-500 text-white rounded-full px-1.5 py-0.5">
+                        {profile.points} pts
+                      </span>
+                    ) : null}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>

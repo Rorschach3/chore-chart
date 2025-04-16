@@ -1,9 +1,11 @@
+
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, Brush, Shirt, Wind, Leaf, Hammer, Paintbrush, Lightbulb } from "lucide-react";
+import { Trash2, Brush, Shirt, Wind, Leaf, Hammer, Paintbrush, Lightbulb, Award } from "lucide-react";
 import { PhotoUploadDialog } from "./PhotoUploadDialog";
 import { ChoreAssignment } from "./ChoreAssignment";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Chore, Profile } from "./types";
 
 const iconMap = {
@@ -15,6 +17,12 @@ const iconMap = {
   Paintbrush,
   Trash2,
   Lightbulb,
+};
+
+// Points awarded for completing different types of chores
+const CHORE_POINTS = {
+  default: 10,
+  difficult: 20,
 };
 
 interface ChoreItemProps {
@@ -35,13 +43,26 @@ export function ChoreItem({
   onDelete
 }: ChoreItemProps) {
   const IconComponent = chore.icon && iconMap[chore.icon] ? iconMap[chore.icon] : null;
+  
+  const handleToggleComplete = (checked: boolean) => {
+    onToggleComplete(chore.id, checked);
+  };
+
+  // Calculate points based on chore type/description
+  const getChorePoints = () => {
+    // Can be extended to check for keywords like "difficult" or chore duration
+    if (chore.description?.toLowerCase().includes('difficult')) {
+      return CHORE_POINTS.difficult;
+    }
+    return CHORE_POINTS.default;
+  };
 
   return (
     <TableRow>
       <TableCell className="w-[50px] text-center">
         <Checkbox 
           checked={chore.completed} 
-          onCheckedChange={checked => onToggleComplete(chore.id, checked as boolean)} 
+          onCheckedChange={handleToggleComplete} 
           disabled={!chore.completion_photo}
         />
       </TableCell>
@@ -49,6 +70,22 @@ export function ChoreItem({
         <div className="flex items-center gap-2">
           {IconComponent && <IconComponent className="h-4 w-4" />}
           {chore.title}
+          
+          {chore.completed && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center text-yellow-500 text-xs font-semibold ml-2">
+                    <Award className="h-3 w-3 mr-1" />
+                    {getChorePoints()} pts
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Points earned for completing this chore</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
       </TableCell>
       <TableCell className={chore.completed ? "line-through text-gray-500" : ""}>

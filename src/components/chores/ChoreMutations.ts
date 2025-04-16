@@ -4,6 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { ChoreIcon } from "./types";
 
+// Points awarded for completing different types of chores
+const CHORE_POINTS = {
+  default: 10,
+  difficult: 20,
+};
+
 export function useChoreMutations(householdId: string | null) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -94,14 +100,56 @@ export function useChoreMutations(householdId: string | null) {
 
   const toggleChore = useMutation({
     mutationFn: async ({ choreId, completed }: { choreId: string; completed: boolean }) => {
+      // First, get chore details
+      const { data: chore, error: choreError } = await supabase
+        .from("chores")
+        .select("*, profiles:assigned_to(*)")
+        .eq("id", choreId)
+        .single();
+      
+      if (choreError) throw choreError;
+      
+      // Update chore completion status
       const { error } = await supabase
         .from("chores")
         .update({ completed })
         .eq("id", choreId);
+      
       if (error) throw error;
+
+      // If chore is being marked as completed and has an assigned user
+      if (completed && chore.assigned_to) {
+        // Calculate points based on chore description
+        let points = CHORE_POINTS.default;
+        if (chore.description?.toLowerCase().includes('difficult')) {
+          points = CHORE_POINTS.difficult;
+        }
+        
+        // Update user profile with points
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("points")
+          .eq("id", chore.assigned_to)
+          .single();
+        
+        if (!profileError) {
+          const currentPoints = profile?.points || 0;
+          await supabase
+            .from("profiles")
+            .update({ points: currentPoints + points })
+            .eq("id", chore.assigned_to);
+          
+          toast({
+            title: "Points awarded!",
+            description: `${points} points earned for completing this chore`,
+          });
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["chores"] });
+      queryClient.invalidateQueries({ queryKey: ["household"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
     },
     onError: (error: any) => {
       toast({

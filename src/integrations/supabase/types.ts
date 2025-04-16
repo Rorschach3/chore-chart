@@ -95,7 +95,7 @@ export type Database = {
       households: {
         Row: {
           created_at: string
-          household_number: number
+          household_number: number | null
           id: string
           invitation_code: string
           manager_id: string | null
@@ -105,7 +105,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          household_number?: number
+          household_number?: number | null
           id?: string
           invitation_code: string
           manager_id?: string | null
@@ -115,7 +115,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          household_number?: number
+          household_number?: number | null
           id?: string
           invitation_code?: string
           manager_id?: string | null
@@ -203,6 +203,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_unique_household_number: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       is_household_admin: {
         Args: { household_id: string }
         Returns: boolean
