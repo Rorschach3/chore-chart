@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Upload } from "lucide-react";
 import type { Chore } from "./types";
+import { toast } from "sonner";
 
 interface PhotoUploadDialogProps {
   chore: Chore;
@@ -19,13 +20,19 @@ export function PhotoUploadDialog({ chore, onPhotoUploaded }: PhotoUploadDialogP
     try {
       setIsUploading(true);
       const fileExt = file.name.split('.').pop();
-      const filePath = `${choreId}/${Math.random()}.${fileExt}`;
+      const fileName = `${choreId}-${Date.now()}.${fileExt}`;
+      const filePath = `${choreId}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('chore-photos')
         .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        toast.error('Error uploading photo', {
+          description: uploadError.message
+        });
+        throw uploadError;
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('chore-photos')
@@ -39,9 +46,11 @@ export function PhotoUploadDialog({ chore, onPhotoUploaded }: PhotoUploadDialogP
         })
         .eq('id', choreId);
 
+      toast.success('Photo uploaded successfully');
       onPhotoUploaded(choreId, true);
     } catch (error) {
       console.error('Error uploading photo:', error);
+      toast.error('Failed to upload photo');
     } finally {
       setIsUploading(false);
     }
