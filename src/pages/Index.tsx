@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,10 @@ const Index = () => {
         .single();
 
       if (error) throw error;
-      return data;
+      return {
+        household_id: data.household_id,
+        points: data.points || 0
+      };
     },
     enabled: !!session?.user?.id,
   });

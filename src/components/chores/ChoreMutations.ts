@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -125,25 +124,28 @@ export function useChoreMutations(householdId: string | null) {
           points = CHORE_POINTS.difficult;
         }
         
-        // Update user profile with points
-        const { data: profile, error: profileError } = await supabase
+        // Fetch current profile to get existing points
+        const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("points")
           .eq("id", chore.assigned_to)
           .single();
         
-        if (!profileError) {
-          const currentPoints = profile?.points || 0;
-          await supabase
-            .from("profiles")
-            .update({ points: currentPoints + points })
-            .eq("id", chore.assigned_to);
-          
-          toast({
-            title: "Points awarded!",
-            description: `${points} points earned for completing this chore`,
-          });
-        }
+        if (profileError) throw profileError;
+        
+        // Update user profile with points
+        const currentPoints = profileData.points || 0;
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({ points: currentPoints + points })
+          .eq("id", chore.assigned_to);
+        
+        if (updateError) throw updateError;
+        
+        toast({
+          title: "Points awarded!",
+          description: `${points} points earned for completing this chore`,
+        });
       }
     },
     onSuccess: () => {

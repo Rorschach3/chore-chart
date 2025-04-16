@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -6,14 +5,7 @@ import { Trophy, Award, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-
-interface Member {
-  id: string;
-  avatar_url: string | null;
-  username: string | null;
-  full_name: string | null;
-  points: number;
-}
+import type { Profile } from "@/components/chores/types";
 
 interface MembersLeaderboardProps {
   householdId: string;
@@ -22,7 +14,7 @@ interface MembersLeaderboardProps {
 export function MembersLeaderboard({ householdId }: MembersLeaderboardProps) {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-  const { data: members = [], isLoading } = useQuery({
+  const { data: members = [], isLoading } = useQuery<Profile[]>({
     queryKey: ["household-members-points", householdId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -41,7 +33,7 @@ export function MembersLeaderboard({ householdId }: MembersLeaderboardProps) {
     enabled: !!householdId,
   });
 
-  const sortedMembers = [...(members || [])].sort((a, b) => {
+  const sortedMembers = [...members].sort((a, b) => {
     if (sortOrder === "desc") {
       return (b.points || 0) - (a.points || 0);
     } else {

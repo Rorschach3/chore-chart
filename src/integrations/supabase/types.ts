@@ -140,6 +140,7 @@ export type Database = {
           full_name: string | null
           household_id: string | null
           id: string
+          points: number | null
           Role: Database["public"]["Enums"]["app_role"] | null
           updated_at: string | null
           username: string | null
@@ -150,6 +151,7 @@ export type Database = {
           full_name?: string | null
           household_id?: string | null
           id: string
+          points?: number | null
           Role?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string | null
           username?: string | null
@@ -160,6 +162,7 @@ export type Database = {
           full_name?: string | null
           household_id?: string | null
           id?: string
+          points?: number | null
           Role?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string | null
           username?: string | null
