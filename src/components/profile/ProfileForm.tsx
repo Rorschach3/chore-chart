@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { DialogClose } from "@/components/ui/dialog";
 
 interface ProfileData {
   full_name: string | null;
@@ -18,7 +19,7 @@ interface ProfileData {
   avatar_url: string | null;
 }
 
-export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
+export const ProfileForm = ({ initialData, onClose }: { initialData?: ProfileData, onClose?: () => void }) => {
   const { session } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -101,6 +102,11 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       queryClient.invalidateQueries({ queryKey: ["userProfile"] });
       setFormError(null);
+      
+      // Call the onClose function if provided or use DialogClose to close the dialog
+      if (onClose) {
+        onClose();
+      }
     },
     onError: (error: any) => {
       setFormError(error.message);
@@ -185,13 +191,23 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
             </div>
           </div>
 
-          <Button
-            type="submit"
-            disabled={updateProfile.isPending || isCheckingUsername}
-            className="w-full"
-          >
-            {updateProfile.isPending || isCheckingUsername ? "Saving..." : "Save Changes"}
-          </Button>
+          <div className="flex justify-end gap-2">
+            <DialogClose asChild>
+              <Button type="button" variant="outline">Cancel</Button>
+            </DialogClose>
+            <DialogClose asChild>
+              <Button
+                type="submit"
+                disabled={updateProfile.isPending || isCheckingUsername}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleSubmit(e);
+                }}
+              >
+                {updateProfile.isPending || isCheckingUsername ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogClose>
+          </div>
         </form>
       </CardContent>
     </Card>

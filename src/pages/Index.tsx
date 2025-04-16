@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -9,10 +10,12 @@ import { HouseholdDetails } from "@/components/household/HouseholdDetails";
 import { LogOut, User } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ProfileForm } from "@/components/profile/ProfileForm";
+import { useState } from "react";
 
 const Index = () => {
   const { session } = useAuth();
   const navigate = useNavigate();
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
 
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["profile"],
@@ -69,7 +72,7 @@ const Index = () => {
               Household Manager
             </h1>
             <div className="flex items-center gap-2">
-              <Dialog>
+              <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
                 <DialogTrigger asChild>
                   <Button 
                     variant="outline" 
@@ -88,7 +91,7 @@ const Index = () => {
                   <DialogHeader>
                     <DialogTitle>Edit Profile</DialogTitle>
                   </DialogHeader>
-                  <ProfileForm />
+                  <ProfileForm onClose={() => setProfileDialogOpen(false)} />
                 </DialogContent>
               </Dialog>
               <Button 
