@@ -1,69 +1,102 @@
-# Welcome to your Lovable project
 
-## Project info
 
-**URL**: https://lovable.dev/projects/980169ec-b704-4303-a6ce-f36f12bad555
+#  ChoreChart
 
-## How can I edit this code?
+![Vercel Deployment](https://img.shields.io/badge/deployed-Vercel-brightgreen?style=flat-square&logo=vercel)
 
-There are several ways of editing your application.
+**ChoreChart** is a modern solution designed to help roommates manage and distribute household chores fairly and efficiently. Our automated system takes the hassle out of chore management, making shared living spaces more harmonious.
 
-**Use Lovable**
+Whether you're living with one roommate or several, ChoreChart helps you:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/980169ec-b704-4303-a6ce-f36f12bad555) and start prompting.
+-  Automatically distribute chores fairly among household members  
+-  Track completion of tasks with photo verification  
+-  Maintain a clear schedule of responsibilities  
+-  Avoid conflicts over household duties  
+-  Keep your shared space clean and organized
+-  AI Chatbot to help users with any questions or issues
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+##  Screenshots
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+| Dashboard | Chore Assignment | Photo Verification |
+|----------|------------------|--------------------|
+| ![Dashboard](./screenshots/dashboard.png) | ![Assign Chores](./screenshots/household.png) | ![Verification](./screenshots/chores.png) |
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+##  Getting Started
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+> **Requirements:**  
+> Make sure you have [Node.js](https://nodejs.org/en/) and [npm](https://www.npmjs.com/) installed. We recommend using [nvm](https://github.com/nvm-sh/nvm) to manage Node versions.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Installation Steps
 
-# Step 3: Install the necessary dependencies.
-npm i
+```bash
+# Step 1: Clone the repository
+git clone https://github.com/Rorschach3/chore-chart.git
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Step 2: Navigate to the project folder
+cd chore-chart
+
+# Step 3: Install dependencies
+npm install
+
+# Step 4: Run the development server
 npm run dev
-```
+````
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🛠 Technologies Used
 
-**Use GitHub Codespaces**
+*  [Vite](https://vitejs.dev/)
+*  [TypeScript](https://www.typescriptlang.org/)
+* ⚛ [React](https://react.dev/)
+*  [shadcn/ui](https://ui.shadcn.com/)
+*  [Tailwind CSS](https://tailwindcss.com/)
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## ✏ Editing Options
 
-This project is built with .
+###  Edit Directly in GitHub
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1. Navigate to the desired file.
+2. Click the **pencil icon** (Edit).
+3. Make your changes and commit them.
+---
 
-## How can I deploy this project?
+## ❓ Frequently Asked Questions
 
-Simply open [Lovable](https://lovable.dev/projects/980169ec-b704-4303-a6ce-f36f12bad555) and click on Share -> Publish.
+### How does ChoreChart work?
 
-## I want to use a custom domain - is that possible?
+ChoreChart uses an automated system to distribute chores fairly. You can assign tasks, verify completion with photos, and ensure everyone does their part.
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+### How do I create a household?
+
+You'll be guided through household setup upon signing in. Add members, set preferences, and start assigning tasks.
+
+### Why do I need to upload photos of completed chores?
+
+Photo verification keeps everyone accountable and helps avoid disputes.
+
+### Can I customize chore schedules?
+
+Yes! You can assign specific days, frequencies, and task types per person.
+
+### How is the chore distribution kept fair?
+
+ChoreChart rotates assignments based on load, past completions, and user preferences to ensure equity.
+
+---
+
+## 🧠 Contributing
+
+Pull requests are welcome! If you have improvements or bug fixes, please fork the repo and submit a PR.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
