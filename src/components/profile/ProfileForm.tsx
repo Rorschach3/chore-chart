@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,9 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { DialogClose } from "@/components/ui/dialog";
 
 interface ProfileData {
   full_name: string | null;
@@ -16,53 +19,44 @@ interface ProfileData {
   avatar_url: string | null;
 }
 
-export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
+export const ProfileForm = ({ initialData, onClose }: { initialData?: ProfileData, onClose?: () => void }) => {
   const { session } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  // Fetch profile data if not provided
-  const { data: fetchedProfileData, isLoading: isProfileLoading } = useQuery({
-    queryKey: ["profileData"],
-    queryFn: async () => {
-      if (!session?.user?.id) throw new Error("Not authenticated");
-      
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("full_name, username, avatar_url")
-        .eq("id", session.user.id)
-        .single();
-        
-      if (error) throw error;
-      return data as ProfileData;
-    },
-    enabled: !!session?.user?.id && !initialData,
-  });
-  
-  const profileData = initialData || fetchedProfileData;
-  
   const [formData, setFormData] = useState<ProfileData>({
-    full_name: "",
-    username: "",
-    avatar_url: null,
+    full_name: initialData?.full_name || "",
+    username: initialData?.username || "",
+    avatar_url: initialData?.avatar_url || null,
   });
-  
-  // Update local state when data is fetched
-  useState(() => {
-    if (profileData) {
-      setFormData({
-        full_name: profileData.full_name || "",
-        username: profileData.username || "",
-        avatar_url: profileData.avatar_url || null,
-      });
-    }
-  });
-  
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
 
   const updateProfile = useMutation({
     mutationFn: async () => {
       if (!session?.user?.id) throw new Error("Not authenticated");
+      
+      // Check if username is already taken by another user
+      if (formData.username && formData.username !== initialData?.username) {
+        setIsCheckingUsername(true);
+        const { data: existingUser, error: checkError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', formData.username)
+          .neq('id', session.user.id)
+          .single();
+        
+        setIsCheckingUsername(false);
+        
+        if (checkError && checkError.code !== 'PGRST116') {
+          // PGRST116 means no rows returned, which is what we want
+          throw checkError;
+        }
+        
+        if (existingUser) {
+          throw new Error("Username is already taken");
+        }
+      }
 
       let avatarUrl = formData.avatar_url;
 
@@ -83,7 +77,6 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
         avatarUrl = publicUrl;
       }
 
-      // Only update profile data, not authentication data like email
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -93,7 +86,13 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
         })
         .eq('id', session.user.id);
 
-      if (error) throw error;
+      if (error) {
+        // If we encounter a unique constraint violation
+        if (error.code === '23505') {
+          throw new Error("Username is already taken");
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
@@ -101,9 +100,16 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
         description: "Profile updated successfully!",
       });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
-      queryClient.invalidateQueries({ queryKey: ["profileData"] });
+      queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+      setFormError(null);
+      
+      // Call the onClose function if provided or use DialogClose to close the dialog
+      if (onClose) {
+        onClose();
+      }
     },
     onError: (error: any) => {
+      setFormError(error.message);
       toast({
         title: "Error",
         description: error.message,
@@ -114,6 +120,7 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
     updateProfile.mutate();
   };
 
@@ -129,9 +136,10 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
     return names.map(name => name.charAt(0).toUpperCase()).join('');
   };
 
-  if (isProfileLoading && !initialData) {
-    return <div>Loading profile data...</div>;
-  }
+  const handleUsernameChange = (value: string) => {
+    setFormData(prev => ({ ...prev, username: value }));
+    setFormError(null); // Clear errors when user changes input
+  };
 
   return (
     <Card>
@@ -140,6 +148,12 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
         <CardDescription>Update your profile information</CardDescription>
       </CardHeader>
       <CardContent>
+        {formError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{formError}</AlertDescription>
+          </Alert>
+        )}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="flex flex-col items-center space-y-4">
             <Avatar className="h-24 w-24">
@@ -171,19 +185,29 @@ export const ProfileForm = ({ initialData }: { initialData?: ProfileData }) => {
               <Input
                 id="username"
                 value={formData.username || ''}
-                onChange={e => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                onChange={e => handleUsernameChange(e.target.value)}
                 placeholder="Enter your username"
               />
             </div>
           </div>
 
-          <Button
-            type="submit"
-            disabled={updateProfile.isPending}
-            className="w-full"
-          >
-            {updateProfile.isPending ? "Saving..." : "Save Changes"}
-          </Button>
+          <div className="flex justify-end gap-2">
+            <DialogClose asChild>
+              <Button type="button" variant="outline">Cancel</Button>
+            </DialogClose>
+            <DialogClose asChild>
+              <Button
+                type="submit"
+                disabled={updateProfile.isPending || isCheckingUsername}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleSubmit(e);
+                }}
+              >
+                {updateProfile.isPending || isCheckingUsername ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogClose>
+          </div>
         </form>
       </CardContent>
     </Card>

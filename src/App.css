@@ -77,12 +77,8 @@
 
 /* Glass effect */
 .glass {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 0.5rem;
-}
-
-.body {
-  background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
 }

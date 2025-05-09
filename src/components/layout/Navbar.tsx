@@ -2,7 +2,7 @@
 import { useAuth } from "@/components/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Home, Menu, Sun, Moon, LogIn } from "lucide-react";
+import { Home, Menu, Sun, Moon } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useTheme } from "next-themes";
 
@@ -11,12 +11,9 @@ export function Navbar() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
 
-  const navItems = session ? [
+  const navItems = [
     { name: "Home", path: "/" },
     { name: "Chores", path: "/chores" },
-    { name: "About", path: "/about" },
-    { name: "FAQ", path: "/faq" },
-  ] : [
     { name: "About", path: "/about" },
     { name: "FAQ", path: "/faq" },
   ];
@@ -45,15 +42,6 @@ export function Navbar() {
                       {item.name}
                     </Button>
                   ))}
-                  {!session && (
-                    <Button
-                      variant="ghost"
-                      className="justify-start"
-                      onClick={() => navigate("/auth")}
-                    >
-                      Sign In
-                    </Button>
-                  )}
                 </nav>
               </SheetContent>
             </Sheet>
@@ -78,15 +66,6 @@ export function Navbar() {
                 {item.name}
               </Button>
             ))}
-            {!session && (
-              <Button
-                variant="ghost"
-                onClick={() => navigate("/auth")}
-              >
-                <LogIn className="h-5 w-5 mr-2" />
-                Sign In
-              </Button>
-            )}
           </nav>
         </div>
         <Button

@@ -32,7 +32,7 @@ export function HouseholdSettings({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>House Settings</CardTitle>
+        <CardTitle>Household Settings</CardTitle>
         <CardDescription>
           Manage chore rotation settings
         </CardDescription>

@@ -1,197 +1,207 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/components/ui/use-toast";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/AuthProvider";
 import { ChoresList } from "@/components/chores/ChoresList";
 import { ChoresHeader } from "@/components/chores/ChoresHeader";
-import { createChore, markChoreComplete, updateChorePhoto } from "@/components/chores/ChoreMutations";
-import { useUserProfile } from "@/hooks/useUserProfile";
+import { HouseholdSettings } from "@/components/chores/HouseholdSettings";
 import { useHouseholdInfo } from "@/hooks/useHouseholdInfo";
-import { supabase } from "@/integrations/supabase/client";
-import { ChoreIcon } from "@/components/chores/types";
+import { useHouseholdMembers } from "@/hooks/useHouseholdMembers";
+import { useHouseholdSettings } from "@/hooks/useHouseholdSettings";
 import { useChores } from "@/hooks/useChores";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { useChoreMutations } from "@/components/chores/ChoreMutations";
+import { ChoreIcon } from "@/components/chores/types";
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip as RechartsTooltip, 
+  Legend, 
+  ResponsiveContainer 
+} from 'recharts';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export default function Chores() {
-  const navigate = useNavigate();
-  const { session } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const { data: profile } = useUserProfile(session);
-  
-  const { data: householdInfo, isLoading: isHouseholdLoading } = useHouseholdInfo(session);
-  
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+const Chores = () => {
   const [newChoreTitle, setNewChoreTitle] = useState("");
   const [newChoreDescription, setNewChoreDescription] = useState("");
-  const [newChoreIcon, setNewChoreIcon] = useState<ChoreIcon>("Utensils");
-  
-  const { data: chores = [], isLoading: isChoresLoading } = useChores(householdInfo?.household_id);
-  
-  const createChoreMutation = useMutation({
-    mutationFn: createChore,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["chores"] });
-      setIsDialogOpen(false);
-      setNewChoreTitle("");
-      setNewChoreDescription("");
-      setNewChoreIcon("Utensils");
-      toast({
-        title: "Chore Created",
-        description: "Your new chore has been added to the list.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-  
-  const markCompleteMutation = useMutation({
-    mutationFn: markChoreComplete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["chores"] });
-      toast({
-        title: "Chore Completed",
-        description: "Great job! The chore has been marked as complete.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-  
+  const [newChoreIcon, setNewChoreIcon] = useState<ChoreIcon | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const {
+    session
+  } = useAuth();
+  const navigate = useNavigate();
+  const {
+    data: userInfo
+  } = useHouseholdInfo(session);
+  const {
+    data: members
+  } = useHouseholdMembers(userInfo?.household_id);
+  const {
+    household,
+    updateSettings
+  } = useHouseholdSettings(userInfo?.household_id);
+  const {
+    data: chores = [],
+    isLoading
+  } = useChores(userInfo?.household_id);
+  const {
+    data: userProfile
+  } = useUserProfile(session);
+  const {
+    createChore,
+    deleteChore,
+    assignChore,
+    toggleChore,
+    randomlyReassignChore
+  } = useChoreMutations(userInfo?.household_id);
+
+  const isManager = household?.manager_id === session?.user?.id;
+
   const handleCreateChore = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!householdInfo?.household_id) {
-      toast({
-        title: "Error",
-        description: "You must be part of a household to create chores.",
-        variant: "destructive",
+    if (newChoreTitle.trim()) {
+      createChore.mutate({
+        title: newChoreTitle,
+        description: newChoreDescription,
+        icon: newChoreIcon
+      }, {
+        onSuccess: () => {
+          setNewChoreTitle("");
+          setNewChoreDescription("");
+          setNewChoreIcon(null);
+          setIsDialogOpen(false);
+        }
       });
-      return;
     }
-    
-    createChoreMutation.mutate({
-      title: newChoreTitle,
-      description: newChoreDescription,
-      icon: newChoreIcon,
-      householdId: householdInfo.household_id,
-    });
   };
-  
-  const handleCompleteChore = (id: string) => {
-    markCompleteMutation.mutate(id);
-  };
-  
-  const uploadPhotoMutation = useMutation({
-    mutationFn: async ({ choreId, file }: { choreId: string; file: File }) => {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${choreId}-${Math.random()}.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from("chore_photos")
-        .upload(fileName, file);
-      
-      if (uploadError) throw uploadError;
-      
-      const { data: { publicUrl } } = supabase.storage
-        .from("chore_photos")
-        .getPublicUrl(fileName);
-      
-      return updateChorePhoto(choreId, publicUrl);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["chores"] });
-      toast({
-        title: "Photo Uploaded",
-        description: "Your completion photo has been uploaded.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-  
-  const handlePhotoUpload = (choreId: string, file: File) => {
-    uploadPhotoMutation.mutate({ choreId, file });
-  };
-  
-  const handleNavigateBack = () => {
-    navigate("/");
-  };
-  
-  if (isHouseholdLoading || isChoresLoading) {
-    return (
-      <div className="container py-8">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg font-medium">Loading...</div>
-        </div>
-      </div>
-    );
+
+  // Prepare points data for chart
+  const pointsData = members?.map(member => ({
+    name: member.full_name || member.username || 'Unknown',
+    points: member.points || 0
+  })).sort((a, b) => b.points - a.points) || [];
+
+  if (!userInfo?.household_id) {
+    return <div className="min-h-screen p-4 flex items-center justify-center">
+        <Card>
+          <CardHeader>
+            <CardTitle>No Household Selected</CardTitle>
+            <CardDescription>You need to create or join a household first.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => navigate("/")}>Go to Households</Button>
+          </CardContent>
+        </Card>
+      </div>;
   }
-  
-  if (!householdInfo?.household_id) {
-    return (
-      <div className="container py-8">
-        <div className="flex flex-col items-center justify-center h-64 space-y-4">
-          <div className="text-lg font-medium">You don't have a household yet</div>
-          <button 
-            onClick={() => navigate("/")}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md"
-          >
-            Go create or join one
-          </button>
-        </div>
-      </div>
-    );
-  }
-  
-  return (
-    <div className="container py-8 space-y-8">
-      <ChoresHeader
-        username={profile?.username}
-        isDialogOpen={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        onNavigateBack={handleNavigateBack}
-        onCreateChore={handleCreateChore}
-        title={newChoreTitle}
-        onTitleChange={setNewChoreTitle}
-        description={newChoreDescription}
-        onDescriptionChange={setNewChoreDescription}
-        icon={newChoreIcon}
-        onIconChange={setNewChoreIcon}
-        isSubmitting={createChoreMutation.isPending}
-      />
-      
-      {chores.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 space-y-4">
-          <div className="text-lg font-medium">No chores found</div>
-          <div className="text-sm text-gray-500">
-            Create your first chore to get started
-          </div>
-        </div>
-      ) : (
-        <ChoresList
-          chores={chores}
-          onComplete={handleCompleteChore}
-          onPhotoUpload={handlePhotoUpload}
-          isUpdating={markCompleteMutation.isPending || uploadPhotoMutation.isPending}
+
+  return <div className="min-h-screen p-4 bg-gray-50">
+      <div className="max-w-4xl mx-auto space-y-4">
+        <ChoresHeader 
+          username={userProfile?.full_name || userProfile?.username} 
+          isDialogOpen={isDialogOpen} 
+          onOpenChange={setIsDialogOpen} 
+          onNavigateBack={() => navigate("/")} 
+          onCreateChore={handleCreateChore} 
+          title={newChoreTitle} 
+          onTitleChange={setNewChoreTitle} 
+          description={newChoreDescription} 
+          onDescriptionChange={setNewChoreDescription}
+          icon={newChoreIcon}
+          onIconChange={setNewChoreIcon}
+          isSubmitting={createChore.isPending} 
         />
-      )}
-    </div>
-  );
-}
+
+        <HouseholdSettings 
+          household={household} 
+          members={members || []} 
+          isManager={isManager} 
+          currentUserId={session?.user?.id || ""} 
+          onUpdateSettings={updateSettings.mutate} 
+        />
+
+        <Tabs defaultValue="chores" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="chores">Chores List</TabsTrigger>
+            <TabsTrigger value="points">Points Leaderboard</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="chores">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">Chores List</CardTitle>
+                <CardDescription>
+                  Manage your household chores (A picture of the completed task is needed to mark as complete)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="text-center py-4">Loading chores...</div>
+                ) : chores.length === 0 ? (
+                  <div className="text-center py-4 text-gray-500">
+                    No chores yet. Add your first chore!
+                  </div>
+                ) : (
+                  <ChoresList 
+                    chores={chores} 
+                    members={members || []} 
+                    isAdmin={isManager} 
+                    onToggleComplete={(choreId, completed) => toggleChore.mutate({ choreId, completed })} 
+                    onAssign={(choreId, userId) => assignChore.mutate({ choreId, userId })} 
+                    onDelete={choreId => deleteChore.mutate(choreId)}
+                    onReassign={choreId => randomlyReassignChore.mutate(choreId)} 
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="points">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">Points Leaderboard</CardTitle>
+                <CardDescription>
+                  See who's completed the most chores and earned the most points
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {pointsData.length === 0 ? (
+                  <div className="text-center py-4 text-gray-500">
+                    No points earned yet. Complete some chores to earn points!
+                  </div>
+                ) : (
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={pointsData}
+                        margin={{
+                          top: 20,
+                          right: 30,
+                          left: 20,
+                          bottom: 5,
+                        }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <RechartsTooltip />
+                        <Legend />
+                        <Bar dataKey="points" fill="#8884d8" name="Points" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>;
+};
+
+export default Chores;

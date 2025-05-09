@@ -10,22 +10,27 @@ import { HouseholdDetails } from "@/components/household/HouseholdDetails";
 import { LogOut, User } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ProfileForm } from "@/components/profile/ProfileForm";
+import { useState } from "react";
 
 const Index = () => {
   const { session } = useAuth();
   const navigate = useNavigate();
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
 
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["profile"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("household_id")
+        .select("household_id, points")
         .eq("id", session?.user?.id)
         .single();
 
       if (error) throw error;
-      return data;
+      return {
+        household_id: data.household_id,
+        points: data.points || 0
+      };
     },
     enabled: !!session?.user?.id,
   });
@@ -36,7 +41,7 @@ const Index = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("households")
-        .select("*")
+        .select("*, invitation_code")
         .eq("id", profile.household_id)
         .single();
 
@@ -67,7 +72,7 @@ const Index = () => {
               Household Manager
             </h1>
             <div className="flex items-center gap-2">
-              <Dialog>
+              <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
                 <DialogTrigger asChild>
                   <Button 
                     variant="outline" 
@@ -75,13 +80,18 @@ const Index = () => {
                   >
                     <User className="h-4 w-4 mr-2" />
                     <span className="hidden sm:inline">Edit Profile</span>
+                    {profile?.points ? (
+                      <span className="ml-1 text-xs bg-yellow-500 text-white rounded-full px-1.5 py-0.5">
+                        {profile.points} pts
+                      </span>
+                    ) : null}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Edit Profile</DialogTitle>
                   </DialogHeader>
-                  <ProfileForm />
+                  <ProfileForm onClose={() => setProfileDialogOpen(false)} />
                 </DialogContent>
               </Dialog>
               <Button 
